@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <meta name="referrer" content="no-referrer">
+  <title>Connect · Unbind</title>
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/style.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <header class="site-header shell">
+    <a class="brand" href="/" aria-label="Unbind home"><img src="/icon.svg" width="30" height="30" alt="">unbind</a>
+    <nav aria-label="Main navigation"><a href="/downloads/">Downloads</a></nav>
+  </header>
+  <main class="shell secondary-page">
+    <h1>Connect to a shared port<span>.</span></h1>
+    <p id="join-message" class="intro">Open the full share link to get the connection command.</p>
+    <div id="join-terminal" class="terminal" hidden>
+      <pre><code id="join-command"></code></pre>
+      <button type="button" data-copy hidden>Copy</button>
+    </div>
+    <noscript><p>Copy the full link from the address bar and pass it to <code>unbind connect '&lt;link&gt;' --listen 8080</code>.</p></noscript>
+    <p id="join-next" hidden>The service will be available on this computer at <code>127.0.0.1:8080</code>. Use <code>--listen</code> to choose a different port.</p>
+    <p>Need Unbind on this computer? <a href="/downloads/">Get the installer</a>.</p>
+  </main>
+  <footer class="site-footer shell"><p>Inspired by <a href="https://github.com/tailscale/tailcat" rel="noreferrer">Tailcat by Tailscale</a>.</p></footer>
+</body>
+</html>

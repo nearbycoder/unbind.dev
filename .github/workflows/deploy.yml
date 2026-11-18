@@ -1,0 +1,127 @@
+name: Deploy Unbind
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: unbind-production
+  queue: max
+
+jobs:
+  build:
+    name: Build ${{ matrix.platform }} downloads
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 25
+    strategy:
+      matrix:
+        include:
+          - platform: linux
+            runner: ubuntu-24.04
+            targets: x86_64-unknown-linux-musl,aarch64-unknown-linux-musl
+          - platform: macos
+            runner: macos-15
+            targets: x86_64-apple-darwin,aarch64-apple-darwin
+          - platform: windows
+            runner: ubuntu-24.04
+            targets: x86_64-pc-windows-gnu,aarch64-pc-windows-gnullvm
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install Rust toolchain and targets
+        env:
+          TARGETS: ${{ matrix.targets }}
+        run: |
+          rustup toolchain install 1.96.1 --profile minimal --target "$TARGETS"
+          rustup override set 1.96.1
+
+      - name: Install Zig cross-compiler
+        if: matrix.platform != 'macos'
+        run: |
+          mkdir -p "$RUNNER_TEMP/zig" "$RUNNER_TEMP/zigbuild"
+          curl -fsSL --retry 3 -o "$RUNNER_TEMP/zig.tar.xz" \
+            https://ziglang.org/download/0.15.2/zig-x86_64-linux-0.15.2.tar.xz
+          curl -fsSL --retry 3 -o "$RUNNER_TEMP/zigbuild.tar.xz" \
+            https://github.com/rust-cross/cargo-zigbuild/releases/download/v0.24.1/cargo-zigbuild-x86_64-unknown-linux-musl.tar.xz
+          (
+            cd "$RUNNER_TEMP"
+            sha256sum --check <<'SUMS'
+          02aa270f183da276e5b5920b1dac44a63f1a49e55050ebde3aecc9eb82f93239  zig.tar.xz
+          f09b180a517af0e4dd4bffc921bb88e5ab705452a9dd948c61e489b3020c68c2  zigbuild.tar.xz
+          SUMS
+          )
+          tar -xJf "$RUNNER_TEMP/zig.tar.xz" -C "$RUNNER_TEMP/zig" --strip-components=1
+          tar -xJf "$RUNNER_TEMP/zigbuild.tar.xz" -C "$RUNNER_TEMP/zigbuild" --strip-components=1
+          printf '%s\n' "$RUNNER_TEMP/zig" "$RUNNER_TEMP/zigbuild" >> "$GITHUB_PATH"
+
+      - name: Build release downloads
+        env:
+          PLATFORM: ${{ matrix.platform }}
+        run: |
+          sh scripts/build-downloads.sh "$PLATFORM"
+          file dist/unbind-*
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: unbind-${{ matrix.platform }}
+          path: dist/unbind-*
+          if-no-files-found: error
+          retention-days: 1
+
+  deploy:
+    name: Deploy to Railway
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: unbind-*
+          merge-multiple: true
+          path: dist
+
+      - name: Check the six release binaries
+        working-directory: dist
+        run: |
+          for name in unbind-linux-amd64 unbind-linux-arm64 unbind-darwin-amd64 \
+            unbind-darwin-arm64 unbind-windows-amd64.exe unbind-windows-arm64.exe; do
+            test -s "$name"
+          done
+          sha256sum unbind-* > SHA256SUMS
+
+      - name: Install Railway CLI
+        run: |
+          npm install --prefix "$RUNNER_TEMP/railway-cli" @railway/cli@5.62.1
+          printf '%s\n' "$RUNNER_TEMP/railway-cli/node_modules/.bin" >> "$GITHUB_PATH"
+
+      - name: Deploy the current commit
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_PROJECT_ID: ${{ vars.RAILWAY_PROJECT_ID }}
+          RAILWAY_ENVIRONMENT_ID: ${{ vars.RAILWAY_ENVIRONMENT_ID }}
+          RAILWAY_SERVICE_ID: ${{ vars.RAILWAY_SERVICE_ID }}
+        run: |
+          : "${RAILWAY_TOKEN:?Set the RAILWAY_TOKEN Actions secret}"
+          : "${RAILWAY_PROJECT_ID:?Set the RAILWAY_PROJECT_ID Actions variable}"
+          : "${RAILWAY_ENVIRONMENT_ID:?Set the RAILWAY_ENVIRONMENT_ID Actions variable}"
+          : "${RAILWAY_SERVICE_ID:?Set the RAILWAY_SERVICE_ID Actions variable}"
+          railway up --yes --no-gitignore --ci \
+            --project "$RAILWAY_PROJECT_ID" \
+            --environment "$RAILWAY_ENVIRONMENT_ID" \
+            --service "$RAILWAY_SERVICE_ID" \
+            --message "Deploy ${GITHUB_SHA}"
+
+      - name: Verify production and published downloads
+        run: |
+          curl -fsS --retry 5 --max-time 15 https://unbind.dev/healthz | grep -Fx ok
+          curl -fsS --retry 5 --max-time 15 https://unbind.dev/downloads/SHA256SUMS \
+            | diff -u dist/SHA256SUMS -

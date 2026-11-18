@@ -1,0 +1,17 @@
+Unbind CLI third-party notices
+==============================
+
+Generated from Cargo.lock with cargo-about. Covers the Linux, macOS, and
+Windows builds of Unbind.
+
+{{#each licenses}}
+------------------------------------------------------------------------------
+{{name}}
+
+{{#each used_by}}
+  {{crate.name}} {{crate.version}}
+{{/each}}
+
+{{{text}}}
+
+{{/each}}

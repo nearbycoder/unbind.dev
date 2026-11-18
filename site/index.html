@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Share a local TCP service over a direct, encrypted connection between two computers.">
+  <title>Unbind · Share a local port</title>
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/style.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <header class="site-header shell">
+    <a class="brand" href="/" aria-label="Unbind home"><img src="/icon.svg" width="30" height="30" alt="">unbind</a>
+    <nav aria-label="Main navigation">
+      <a href="#quickstart">Quickstart</a>
+      <a href="/downloads/">Downloads</a>
+    </nav>
+  </header>
+  <main class="shell">
+    <section class="hero" aria-labelledby="title">
+      <div>
+        <h1 id="title">Share a<br>local port<span>.</span></h1>
+        <p class="intro">Run one command to share a local TCP service. Send the link to another computer to connect directly over an encrypted tunnel.</p>
+        <div class="terminal install">
+          <pre><code data-install="sh">curl -fsSL https://unbind.dev/install.sh | sh</code></pre>
+          <button type="button" data-copy hidden>Copy</button>
+        </div>
+        <p class="subtext"><a href="/downloads/">Platform downloads and Windows installer</a></p>
+      </div>
+      <div class="diagram" aria-label="The host service and the connecting computer communicate over a direct encrypted tunnel" role="img">
+        <div class="node"><span class="node-icon">&gt;_</span><div><small>HOST COMPUTER</small><strong>Local service</strong></div><code>:3000</code></div>
+        <div class="wire"><span></span><p>DIRECT TUNNEL</p></div>
+        <div class="node"><span class="node-icon">&gt;_</span><div><small>CONNECTING COMPUTER</small><strong>Local listener</strong></div><code>:8080</code></div>
+      </div>
+    </section>
+    <section class="quickstart" id="quickstart" aria-labelledby="quickstart-title">
+      <h2 id="quickstart-title">Quickstart</h2>
+      <p>Install Unbind on both computers. Keep the sharing command running while you use the tunnel.</p>
+      <div class="steps">
+        <article>
+          <h3>Share from the host</h3>
+          <p>Run this on the computer where the service is listening on port 3000. Send the printed link to the other computer.</p>
+          <div class="terminal"><pre><code data-share>unbind share 3000</code></pre><button type="button" data-copy hidden>Copy</button></div>
+        </article>
+        <article>
+          <h3>Connect from the other computer</h3>
+          <p>Use the link to start a local listener. For a web service, open <code>http://127.0.0.1:8080</code> on that computer.</p>
+          <div class="terminal"><pre><code>unbind connect '&lt;link&gt;' --listen 8080</code></pre><button type="button" data-copy hidden>Copy</button></div>
+        </article>
+      </div>
+    </section>
+    <section class="details" aria-labelledby="details-title">
+      <h2 id="details-title">How it connects</h2>
+      <div class="detail-grid">
+        <div><h3>Direct traffic</h3><p>Unbind exchanges connection details to introduce the computers. The TCP service traffic travels directly between them.</p></div>
+        <div><h3>Private links</h3><p>Anyone with the invite can reach the shared port while the host is running. Send it only to people you want to give access.</p></div>
+        <div><h3>Network requirements</h3><p>Both computers need a working UDP path to each other. Networks that block direct UDP can prevent a connection.</p></div>
+      </div>
+    </section>
+  </main>
+  <footer class="site-footer shell">
+    <p>Unbind’s share-and-connect workflow is inspired by <a href="https://github.com/tailscale/tailcat" rel="noreferrer">Tailcat by Tailscale</a>.</p>
+    <a href="/downloads/">Downloads</a>
+  </footer>
+</body>
+</html>
