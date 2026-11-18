@@ -4,17 +4,25 @@ on:
   push:
     branches: [main]
     tags: ['v[0-9]*']
+  workflow_dispatch:
+    inputs:
+      winget_version:
+        description: Published version to validate with WinGet
+        required: true
+        default: '0.2.0'
+        type: string
 
 permissions:
   contents: read
 
 concurrency:
-  group: ${{ github.ref_type == 'tag' && 'unbind-versioned-release' || 'unbind-production' }}
+  group: ${{ github.event_name == 'workflow_dispatch' && 'unbind-winget-verification' || github.ref_type == 'tag' && 'unbind-versioned-release' || 'unbind-production' }}
   queue: max
 
 jobs:
   build:
     name: Build ${{ matrix.platform }} downloads
+    if: github.event_name == 'push'
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 25
     strategy:
@@ -242,24 +250,33 @@ jobs:
 
   winget:
     name: Validate and install the WinGet package
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: always() && (github.event_name == 'workflow_dispatch' || (startsWith(github.ref, 'refs/tags/v') && needs.release.result == 'success'))
     needs: release
     runs-on: windows-2025
     timeout-minutes: 15
     steps:
-      - name: Locate WinGet
+      - name: Prepare a current WinGet client
         shell: pwsh
         run: |
-          if (-not (Get-Command winget.exe -ErrorAction SilentlyContinue)) {
+          $installed = [version]'0.0'
+          if (Get-Command winget.exe -ErrorAction SilentlyContinue) {
+            $reported = (winget --version).Trim().TrimStart('v')
+            if ($reported -match '^\d+\.\d+\.\d+$') { $installed = [version]$reported }
+          }
+          if ($installed -lt [version]'1.28') {
             Install-Module Microsoft.WinGet.Client -Repository PSGallery -Force -Scope CurrentUser
-            Repair-WinGetPackageManager -AllUsers
+            Repair-WinGetPackageManager -Force -Latest
             Join-Path $env:LOCALAPPDATA 'Microsoft\WindowsApps' >> $env:GITHUB_PATH
           }
 
       - name: Validate and install the published manifests
         shell: pwsh
+        env:
+          UNBIND_RELEASE_REF: ${{ inputs.winget_version || github.ref_name }}
         run: |
-          $version = $env:GITHUB_REF_NAME.Substring(1)
+          $version = $env:UNBIND_RELEASE_REF -replace '^v', ''
+          if ($version -notmatch '^\d+\.\d+\.\d+$') { throw 'Expected a stable version such as 0.2.0.' }
+          winget --version
           $bundle = Join-Path $env:RUNNER_TEMP 'unbind-winget.zip'
           $manifests = Join-Path $env:RUNNER_TEMP 'unbind-winget'
           Invoke-WebRequest "https://unbind.dev/downloads/releases/$version/unbind-winget.zip" -OutFile $bundle
