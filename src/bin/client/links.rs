@@ -19,7 +19,7 @@ pub fn print_qr(link: &str) -> Result<()> {
     Ok(())
 }
 
-fn unpack(uri: &str) -> Result<String> {
+pub fn unpack(uri: &str) -> Result<String> {
     let uri = Url::parse(uri).context("Invalid Unbind app link")?;
     ensure!(
         uri.scheme() == "unbind"

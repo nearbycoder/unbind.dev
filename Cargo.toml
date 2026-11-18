@@ -1,6 +1,6 @@
 [package]
 name = "unbind"
-version = "0.2.1"
+version = "0.3.0"
 edition = "2024"
 rust-version = "1.91"
 description = "Share local TCP and UDP services over a direct encrypted peer connection"
@@ -16,12 +16,19 @@ name = "unbind-web"
 path = "src/bin/unbind-web.rs"
 required-features = ["web"]
 
+[[bin]]
+name = "unbind-desktop"
+path = "src/bin/unbind-desktop.rs"
+required-features = ["desktop"]
+
 [features]
 default = ["cli"]
-cli = [
+cli = ["client", "dep:self-replace"]
+desktop = ["client", "dep:rune"]
+client = [
     "dep:anyhow", "dep:axum", "dep:bytes", "dep:clap", "dep:ed25519-dalek",
     "dep:getrandom", "dep:hmac", "dep:if-addrs", "dep:qrcode", "dep:reqwest",
-    "dep:self-replace", "dep:serde_json", "dep:sha2", "dep:subtle", "dep:tempfile",
+    "dep:serde_json", "dep:sha2", "dep:subtle", "dep:tempfile",
     "dep:tokio-util", "dep:toml", "dep:webrtc", "dep:yamux",
 ]
 web = ["dep:anyhow", "dep:axum", "dep:subtle", "dep:tower-http"]
@@ -38,6 +45,7 @@ hmac = { version = "0.12", optional = true }
 if-addrs = { version = "0.14", optional = true }
 qrcode = { version = "0.14", default-features = false, optional = true }
 reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"], optional = true }
+rune = { git = "https://github.com/anomalyco/rune", rev = "3ef98871fb72307872d44995777c543028d3bc50", default-features = false, features = ["accessibility", "embedded-fonts", "metal-backend", "native-file-dialog"], optional = true }
 self-replace = { version = "1", optional = true }
 serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", optional = true }
@@ -50,6 +58,15 @@ toml = { version = "0.9", optional = true }
 tower-http = { version = "0.6", features = ["fs"], optional = true }
 webrtc = { version = "0.14", optional = true }
 yamux = { version = "0.13", optional = true }
+
+# Cargo applies workspace patches only at the root. Keep Rune's native platform
+# and text patches on the same revision as the framework.
+[patch.crates-io]
+accesskit_macos = { git = "https://github.com/anomalyco/rune", rev = "3ef98871fb72307872d44995777c543028d3bc50" }
+accesskit_windows = { git = "https://github.com/anomalyco/rune", rev = "3ef98871fb72307872d44995777c543028d3bc50" }
+parley_engine = { git = "https://github.com/anomalyco/rune", rev = "3ef98871fb72307872d44995777c543028d3bc50" }
+wgpu-hal = { git = "https://github.com/anomalyco/rune", rev = "3ef98871fb72307872d44995777c543028d3bc50" }
+winit = { git = "https://github.com/anomalyco/rune", rev = "3ef98871fb72307872d44995777c543028d3bc50" }
 
 [profile.release]
 strip = "symbols"

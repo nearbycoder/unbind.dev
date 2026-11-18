@@ -25,11 +25,11 @@
       <div>
         <h1 id="title">Share a port.<br><span>Send a link.</span></h1>
         <p class="intro">Give another computer access to your dev server, database, or SSH server over a direct, encrypted connection. Run Unbind on both ends and send an invite.</p>
-        <div class="terminal install">
-          <pre><code data-install="sh">curl -fsSL https://unbind.dev/install.sh | sh</code></pre>
-          <button type="button" data-copy aria-label="Copy macOS and Linux install command" hidden>Copy</button>
+        <div class="hero-actions">
+          <a class="primary-link" href="/downloads/#desktop-title">Download Unbind</a>
+          <a href="#quickstart">How it works</a>
         </div>
-        <p class="hero-platforms"><a href="/downloads/">Get Unbind for macOS, Linux, or Windows <span aria-hidden="true">↗</span></a></p>
+        <p class="hero-platforms">macOS, Windows, and Linux</p>
       </div>
       <div class="diagram" role="img" aria-label="A service on port 3000 on the host is available on port 8080 on the guest computer through a direct encrypted tunnel.">
         <div class="diagram-caption" aria-hidden="true"><span></span> Peer-to-peer connection</div>
@@ -90,7 +90,7 @@
             <a class="feature-link" href="/downloads/">See downloads and install options <span aria-hidden="true">↗</span></a>
           </div>
           <dl>
-            <div><dt>macOS, Linux, and Windows</dt><dd>Get x86-64 or ARM64 builds, a terminal installer, Homebrew, Scoop, or a WinGet manifest.</dd></div>
+            <div><dt>macOS, Windows, and Linux</dt><dd>Get the native app or the command-line client for x86-64 and ARM64.</dd></div>
             <div><dt>Checksums and signed releases</dt><dd>Verify your install with SHA-256. The updater checks the release signature and lets you roll back to your previous build.</dd></div>
           </dl>
         </article>
@@ -98,19 +98,18 @@
     </section>
     <section class="quickstart" id="quickstart" aria-labelledby="quickstart-title">
       <h2 id="quickstart-title">From local port to shared link</h2>
-      <p>Install Unbind on both computers and keep the share running while you use it.</p>
+      <p>Open Unbind on both computers. Either can share a service or connect to one.</p>
       <div class="steps">
         <article>
           <h3>Share from the host</h3>
-          <p>Run this where your service is listening on port 3000, then send the link it prints.</p>
-          <div class="terminal"><pre><code data-share>unbind share 3000</code></pre><button type="button" data-copy aria-label="Copy share command" hidden>Copy</button></div>
+          <p>Open <strong>Share</strong>, enter the port your service is using, and create an invite. Copy the link or show its QR code.</p>
         </article>
         <article>
           <h3>Connect from the guest</h3>
-          <p>Replace <code>&lt;link&gt;</code> with the invite. For a web service, open <code>http://127.0.0.1:8080</code> on the guest computer.</p>
-          <div class="terminal"><pre><code>unbind connect '&lt;link&gt;' --listen 8080</code></pre><button type="button" data-copy aria-label="Copy connect command" hidden>Copy</button></div>
+          <p>Paste the invite in <strong>Connect</strong> and choose a local port. If you choose 8080, a web service opens at <code>http://127.0.0.1:8080</code>.</p>
         </article>
       </div>
+      <p>Prefer a terminal? <a href="https://github.com/nearbycoder/unbind.dev#share-and-connect">Read the CLI quickstart</a>.</p>
       <p class="quickstart-note">The rendezvous service introduces the peers. Traffic flows directly between them over UDP, so a restrictive firewall or NAT can prevent the connection. <a href="https://github.com/nearbycoder/unbind.dev#how-it-connects">Read how it connects</a>.</p>
     </section>
   </main>

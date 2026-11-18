@@ -58,6 +58,20 @@ pub enum Client {
     Once(ClientRoutes),
 }
 
+/// Lifecycle controls for a session managed by another Rust frontend.
+pub struct Observer {
+    pub ready: oneshot::Sender<Ready>,
+    /// Set this to true or drop its sender to shut the session down.
+    pub stop: watch::Receiver<bool>,
+}
+
+/// A session's local controls are available. A guest may still be connecting.
+pub struct Ready {
+    pub id: String,
+    pub invite: Option<(String, String)>,
+    pub listeners: Vec<String>,
+}
+
 impl Client {
     fn relay(&self) -> Relay<'_> {
         match self {
@@ -139,29 +153,67 @@ struct RoomWorker {
     consumed: Arc<AtomicBool>,
     peers: PeerStates,
     done: mpsc::Sender<()>,
+    cli: bool,
 }
 
 pub async fn share(share: Share, stun: Vec<String>, network: network::Options) -> Result<()> {
+    run_share(share, stun, network, None).await
+}
+
+pub async fn share_observed(
+    share: Share,
+    stun: Vec<String>,
+    network: network::Options,
+    observer: Observer,
+) -> Result<()> {
+    run_share(share, stun, network, Some(observer)).await
+}
+
+async fn run_share(
+    share: Share,
+    stun: Vec<String>,
+    network: network::Options,
+    observer: Option<Observer>,
+) -> Result<()> {
+    let cli = observer.is_none();
+    let (ready, stop) = observer
+        .map(|observer| (observer.ready, observer.stop))
+        .unzip();
+    let stopped = requested_stop(stop);
+    tokio::pin!(stopped);
     let share = Arc::new(share);
     let stun: Arc<[String]> = stun.into();
-    let mut control = Management::start().await?;
     let (done, mut completed) = mpsc::channel(1);
-    let (id, link, room) = open_room(&share, &stun, &network, share.invite, &done).await?;
+    let (mut control, (id, link, room)) = tokio::select! {
+        biased;
+        result = &mut stopped => return result,
+        result = async {
+            let control = Management::start().await?;
+            let room = open_room(&share, &stun, &network, share.invite, &done, cli).await?;
+            Ok::<_, anyhow::Error>((control, room))
+        } => result?,
+    };
     let mut rooms = BTreeMap::from([(id.clone(), room)]);
-    eprintln!(
-        "Sharing {}. Keep this command running.",
-        share.target_names.join(", ")
-    );
-    eprintln!("Share {} · invite {id}", control.id);
-    println!("{link}");
-    if share.qr {
-        links::print_qr(&link)?;
+    if let Some(ready) = ready {
+        let _ = ready.send(Ready {
+            id: control.id.clone(),
+            invite: Some((id.clone(), link.clone())),
+            listeners: Vec::new(),
+        });
+    } else {
+        eprintln!(
+            "Sharing {}. Keep this command running.",
+            share.target_names.join(", ")
+        );
+        eprintln!("Share {} · invite {id}", control.id);
+        println!("{link}");
+        if share.qr {
+            links::print_qr(&link)?;
+        }
     }
-    let stop = shutdown();
-    tokio::pin!(stop);
     let outcome = loop {
         tokio::select! {
-            result = &mut stop => break result,
+            result = &mut stopped => break result,
             Some(()) = completed.recv() => break Ok(()),
             Some(command) = control.commands.recv() => {
                 let (action, reply) = command.into_parts();
@@ -178,7 +230,12 @@ pub async fn share(share: Share, stun: Vec<String>, network: network::Options) -
                             Err(anyhow::anyhow!("This share already has {MAX_INVITES} active invites"))
                         } else {
                             let opts = InviteOptions { expires_in, single_use };
-                            open_room(&share, &stun, &network, opts, &done).await.map(|(id, link, room)| {
+                            let opened = tokio::select! {
+                                biased;
+                                result = &mut stopped => break result,
+                                result = open_room(&share, &stun, &network, opts, &done, cli) => result,
+                            };
+                            opened.map(|(id, link, room)| {
                                 rooms.insert(id.clone(), room);
                                 json!({"id": id, "link": link})
                             })
@@ -263,6 +320,7 @@ async fn open_room(
     network: &network::Options,
     options: InviteOptions,
     done: &mpsc::Sender<()>,
+    cli: bool,
 ) -> Result<(String, String, Room)> {
     if let Some(seconds) = options.expires_in {
         ensure!(
@@ -298,6 +356,7 @@ async fn open_room(
         consumed: Arc::clone(&consumed),
         peers: Arc::clone(&peers),
         done: done.clone(),
+        cli,
     };
     let task = tokio::spawn(Arc::new(worker).run(shutdown, options.single_use));
     Ok((
@@ -359,7 +418,9 @@ impl RoomWorker {
                     match offers {
                         Ok(offers) => {
                             if outage {
-                                eprintln!("Rendezvous connection restored.");
+                                if self.cli {
+                                    eprintln!("Rendezvous connection restored.");
+                                }
                                 outage = false;
                             }
                             if *stopping.borrow() || self.deadline.is_some_and(|deadline| deadline <= Instant::now()) {
@@ -378,7 +439,9 @@ impl RoomWorker {
                                 let stop = peer_stop.clone();
                                 tasks.spawn(async move {
                                     let id = offer.peer.clone();
-                                    if let Err(error) = worker.serve(offer, single_use, stop).await {
+                                    if let Err(error) = worker.serve(offer, single_use, stop).await
+                                        && worker.cli
+                                    {
                                         eprintln!("Peer session ended: {error:#}");
                                     }
                                     id
@@ -386,7 +449,9 @@ impl RoomWorker {
                             }
                         }
                         Err(error) if !outage => {
-                            eprintln!("Rendezvous temporarily unavailable: {error:#}");
+                            if self.cli {
+                                eprintln!("Rendezvous temporarily unavailable: {error:#}");
+                            }
                             outage = true;
                         }
                         Err(_) => {}
@@ -445,10 +510,12 @@ impl RoomWorker {
                 },
             );
         if approval {
-            eprintln!(
-                "Peer {} requests approval. Run unbind status to review it.",
-                request.peer
-            );
+            if self.cli {
+                eprintln!(
+                    "Peer {} requests approval. Run unbind status to review it.",
+                    request.peer
+                );
+            }
             let allowed = tokio::select! {
                 result = timeout(APPROVAL_LIMIT, receive) => result.context("Host approval timed out")??,
                 _ = wait_for_stop(&mut stop) => return Ok(()),
@@ -492,7 +559,9 @@ impl RoomWorker {
                 state.path = path;
                 state.traffic = Some(peer.traffic());
             }
-            eprintln!("Peer connected directly.");
+            if self.cli {
+                eprintln!("Peer connected directly.");
+            }
             peer.run(channel, role).await
         };
         let result = tokio::select! {
@@ -509,6 +578,15 @@ impl RoomWorker {
 
 async fn wait_for_stop(stop: &mut watch::Receiver<bool>) {
     let _ = stop.wait_for(|stop| *stop).await;
+}
+
+async fn requested_stop(stop: Option<watch::Receiver<bool>>) -> Result<()> {
+    if let Some(mut stop) = stop {
+        wait_for_stop(&mut stop).await;
+        Ok(())
+    } else {
+        shutdown().await
+    }
 }
 
 async fn wait_for_expiry(deadline: Option<Instant>) {
@@ -533,6 +611,36 @@ pub async fn connect(
     identify: bool,
     retry: bool,
 ) -> Result<()> {
+    run_connect(link, client, stun, network, identify, retry, None).await
+}
+
+pub async fn connect_observed(
+    link: &str,
+    client: Client,
+    stun: &[String],
+    network: &network::Options,
+    identify: bool,
+    retry: bool,
+    observer: Observer,
+) -> Result<()> {
+    run_connect(link, client, stun, network, identify, retry, Some(observer)).await
+}
+
+async fn run_connect(
+    link: &str,
+    client: Client,
+    stun: &[String],
+    network: &network::Options,
+    identify: bool,
+    retry: bool,
+    observer: Option<Observer>,
+) -> Result<()> {
+    let cli = observer.is_none();
+    let (ready, stop) = observer
+        .map(|observer| (observer.ready, observer.stop))
+        .unzip();
+    let stopped = requested_stop(stop);
+    tokio::pin!(stopped);
     let invite = Invite::from_link(link)?;
     let stun = if invite.origin.scheme() == "http" {
         &[]
@@ -540,9 +648,20 @@ pub async fn connect(
         stun
     };
     let signal = SignalClient::new(invite.origin.clone())?;
-    let mut management = Management::start().await?;
+    let mut management = tokio::select! {
+        biased;
+        result = &mut stopped => return result,
+        result = Management::start() => result?,
+    };
     let state = Mutex::new(ClientState::default());
     let addresses = client.addresses();
+    if let Some(ready) = ready {
+        let _ = ready.send(Ready {
+            id: management.id.clone(),
+            invite: None,
+            listeners: addresses.clone(),
+        });
+    }
     let control = async {
         while let Some(command) = management.commands.recv().await {
             let (action, reply) = command.into_parts();
@@ -597,12 +716,13 @@ pub async fn connect(
         identify,
         retry,
         stop,
+        cli,
     });
     tokio::pin!(sessions);
     let exit = tokio::select! {
         result = &mut sessions => return result,
         result = control => result,
-        result = shutdown() => result,
+        result = &mut stopped => result,
     };
     request_stop.send_replace(true);
     sessions.await?;
@@ -619,6 +739,7 @@ struct ClientConnection<'a> {
     identify: bool,
     retry: bool,
     stop: watch::Receiver<bool>,
+    cli: bool,
 }
 
 async fn connect_sessions(connection: ClientConnection<'_>) -> Result<()> {
@@ -632,6 +753,7 @@ async fn connect_sessions(connection: ClientConnection<'_>) -> Result<()> {
         identify,
         retry,
         mut stop,
+        cli,
     } = connection;
     let mut retry_delay = Duration::from_millis(500);
     let mut connected_before = false;
@@ -643,7 +765,9 @@ async fn connect_sessions(connection: ClientConnection<'_>) -> Result<()> {
         };
         let peer_id = random_id()?;
         let session = async {
-            eprintln!("Connecting to the peer directly…");
+            if cli {
+                eprintln!("Connecting to the peer directly…");
+            }
             let mut offer = peer.offer_for(client.advanced()).await?;
             if identify {
                 offer = identity::sign(&invite.room, &peer_id, offer)?;
@@ -675,13 +799,15 @@ async fn connect_sessions(connection: ClientConnection<'_>) -> Result<()> {
                 Some((path, peer.traffic()));
             retry_delay = Duration::from_millis(500);
             connected_before = true;
-            if client.one_shot() {
-                eprintln!("Direct connection ready.");
-            } else {
-                println!(
-                    "Direct connection ready. Listening on {}",
-                    client.addresses().join(", ")
-                );
+            if cli {
+                if client.one_shot() {
+                    eprintln!("Direct connection ready.");
+                } else {
+                    println!(
+                        "Direct connection ready. Listening on {}",
+                        client.addresses().join(", ")
+                    );
+                }
             }
             peer.run(channel, client.relay()).await
         };
@@ -694,7 +820,9 @@ async fn connect_sessions(connection: ClientConnection<'_>) -> Result<()> {
             return result;
         }
         state.lock().expect("client state mutex poisoned").connected = None;
-        if let Err(error) = result {
+        if let Err(error) = result
+            && cli
+        {
             eprintln!("Direct connection interrupted: {error:#}. Reconnecting…");
         }
         tokio::select! {
@@ -711,4 +839,95 @@ pub async fn bind_legacy(listen: SocketAddr) -> Result<Client> {
             .await
             .with_context(|| format!("Could not listen on {listen}"))?,
     ))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tokio::{
+        io::{AsyncReadExt, AsyncWriteExt},
+        net::TcpStream,
+    };
+
+    #[tokio::test]
+    async fn observed_sessions_forward_and_clean_up_on_stop() -> Result<()> {
+        let state_dir = tempfile::tempdir()?;
+        crate::management::set_state_dir(state_dir.path().join("state"));
+        let bind = "127.0.0.1:0".parse()?;
+        let (server, rendezvous) = network::lan_rendezvous(bind).await?;
+        let target = TcpListener::bind(bind).await?;
+        let address = target.local_addr()?.to_string();
+        let echo = tokio::spawn(async move {
+            let (mut peer, _) = target.accept().await?;
+            let mut bytes = [0; 6];
+            peer.read_exact(&mut bytes).await?;
+            peer.write_all(&bytes).await
+        });
+        let (host_ready, host_started) = oneshot::channel();
+        let (stop_host, host_stop) = watch::channel(false);
+        let host = tokio::spawn(share_observed(
+            Share {
+                server,
+                target_names: vec![address.clone()],
+                compatibility_target: Some(address.clone()),
+                services: Services::new(vec![crate::forwarding::Service::Tcp {
+                    name: "default".into(),
+                    target: address,
+                }])?,
+                invite: InviteOptions::default(),
+                approve: false,
+                profile: None,
+                one_file: false,
+                qr: false,
+            },
+            Vec::new(),
+            network::Options::default(),
+            Observer {
+                ready: host_ready,
+                stop: host_stop,
+            },
+        ));
+        let host_info = timeout(Duration::from_secs(5), host_started).await??;
+        let (_, link) = host_info.invite.context("Host provided no invite")?;
+        let (guest_ready, guest_started) = oneshot::channel();
+        let (stop_guest, guest_stop) = watch::channel(false);
+        let client = bind_legacy(bind).await?;
+        let guest = tokio::spawn(async move {
+            connect_observed(
+                &link,
+                client,
+                &[],
+                &network::Options::default(),
+                false,
+                true,
+                Observer {
+                    ready: guest_ready,
+                    stop: guest_stop,
+                },
+            )
+            .await
+        });
+        let guest_info = timeout(Duration::from_secs(5), guest_started).await??;
+        let response = timeout(Duration::from_secs(15), async {
+            let mut local = TcpStream::connect(guest_info.listeners[0].as_str()).await?;
+            local.write_all(b"unbind").await?;
+            let mut response = [0; 6];
+            local.read_exact(&mut response).await?;
+            Ok::<_, std::io::Error>(response)
+        })
+        .await??;
+        assert_eq!(response, *b"unbind");
+        echo.await??;
+        let guest_record = crate::management::find(&guest_info.id)?;
+        let status = crate::management::request(&guest_record, Action::Status).await?;
+        assert_eq!(status["state"], "connected");
+
+        stop_guest.send_replace(true);
+        drop(stop_host);
+        timeout(Duration::from_secs(10), guest).await???;
+        timeout(Duration::from_secs(10), host).await???;
+        assert!(crate::management::records()?.is_empty());
+        rendezvous.abort();
+        Ok(())
+    }
 }

@@ -47,12 +47,14 @@ code { color: var(--ink); }
 .intro { max-width: 33rem; margin-top: 1.35rem; font-size: clamp(1.05rem, 1.7vw, 1.23rem); }
 .terminal { display: flex; align-items: center; gap: 0.65rem; min-width: 0; padding: 0.55rem 0.65rem 0.55rem 0.9rem; border: 1px solid var(--border); border-radius: 0.6rem; background: var(--code); }
 .terminal pre { min-width: 0; flex: 1; padding-block: 0.35rem; overflow-wrap: anywhere; white-space: pre-wrap; font-size: 0.82rem; }
-.terminal button { flex: 0 0 auto; padding: 0.42rem 0.65rem; border: 1px solid var(--border); border-radius: 0.35rem; color: var(--ink); background: var(--panel); font: inherit; font-size: 0.77rem; cursor: pointer; }
-.terminal button:hover { border-color: var(--accent); }
+.terminal button, .join-actions button { flex: 0 0 auto; padding: 0.42rem 0.65rem; border: 1px solid var(--border); border-radius: 0.35rem; color: var(--ink); background: var(--panel); font: inherit; font-size: 0.77rem; cursor: pointer; }
+.terminal button:hover, .join-actions button:hover { border-color: var(--accent); }
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-.install { width: min(100%, 31rem); margin-top: 1.7rem; }
+.hero-actions, .join-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 1rem; margin-top: 1.7rem; }
+.primary-link { padding: 0.65rem 1rem; border-radius: 0.45rem; background: var(--accent); color: var(--code); font-weight: 700; text-decoration: none; }
+.primary-link:hover { background: #ffc0a4; color: var(--code); }
 .hero-platforms { margin-top: 0.75rem; font-size: 0.87rem; }
-.hero-platforms span, .feature-link span { color: var(--accent); }
+.feature-link span { color: var(--accent); }
 
 .diagram {
   padding: clamp(1.15rem, 3.2vw, 2.5rem);
@@ -90,8 +92,7 @@ code { color: var(--ink); }
 .quickstart > p { margin-top: 0.75rem; }
 .steps { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.95rem; margin-top: 1.4rem; }
 .steps article { display: flex; flex-direction: column; padding: clamp(1rem, 2.6vw, 1.6rem); border: 1px solid var(--border); border-radius: 0.75rem; background: var(--panel); }
-.steps article p { margin-block: 0.55rem 1rem; }
-.steps .terminal { margin-top: auto; }
+.steps article p { margin-top: 0.55rem; }
 .quickstart .quickstart-note { margin-top: 1.1rem; font-size: 0.9rem; }
 
 .site-footer { min-height: 5.25rem; padding-block: 1rem; border-top: 1px solid var(--border); }

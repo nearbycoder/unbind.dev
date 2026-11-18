@@ -8,15 +8,19 @@ on:
     inputs:
       winget_version:
         description: Published version to validate with WinGet
-        required: true
+        required: false
         default: '0.2.0'
         type: string
+      desktop_only:
+        description: Build and package the desktop app without publishing
+        default: false
+        type: boolean
 
 permissions:
   contents: read
 
 concurrency:
-  group: ${{ github.event_name == 'workflow_dispatch' && 'unbind-winget-verification' || github.ref_type == 'tag' && 'unbind-versioned-release' || 'unbind-production' }}
+  group: ${{ github.event_name == 'workflow_dispatch' && (inputs.desktop_only && 'unbind-desktop-verification' || 'unbind-winget-verification') || github.ref_type == 'tag' && 'unbind-versioned-release' || 'unbind-production' }}
   queue: max
 
 jobs:
@@ -81,6 +85,154 @@ jobs:
           path: dist/unbind-*
           if-no-files-found: error
           retention-days: 1
+
+  desktop-plan:
+    name: Select desktop downloads
+    if: (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')) || inputs.desktop_only
+    runs-on: ubuntu-24.04
+    outputs:
+      enabled: ${{ steps.version.outputs.enabled }}
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Check the desktop release version
+        id: version
+        run: |
+          python3 - <<'PY'
+          import os
+          import re
+          import tomllib
+          from pathlib import Path
+
+          version = tomllib.loads(Path("Cargo.toml").read_text())["package"]["version"]
+          if not re.fullmatch(r"(?:0|[1-9][0-9]*)(?:\.(?:0|[1-9][0-9]*)){2}", version):
+              raise SystemExit("Expected a stable desktop version such as 0.3.0")
+          manual = os.environ["GITHUB_EVENT_NAME"] == "workflow_dispatch"
+          if not manual and os.environ["GITHUB_REF_NAME"] != f"v{version}":
+              raise SystemExit(f"Release tag must match Cargo.toml version v{version}")
+          enabled = manual or tuple(map(int, version.split("."))) >= (0, 3, 0)
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              print(f"enabled={str(enabled).lower()}", f"version={version}", sep="\n", file=output)
+          PY
+
+  desktop-build:
+    name: Build desktop ${{ matrix.platform }} ${{ matrix.architecture }}
+    needs: desktop-plan
+    if: needs.desktop-plan.outputs.enabled == 'true'
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 45
+    env:
+      DESKTOP_TARGET: ${{ matrix.target }}
+      DESKTOP_PLATFORM: ${{ matrix.platform }}
+      DESKTOP_ARCH: ${{ matrix.architecture }}
+      DESKTOP_VERSION: ${{ needs.desktop-plan.outputs.version }}
+      DESKTOP_RUST: '1.99.1'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux
+            architecture: amd64
+            runner: ubuntu-24.04
+            target: x86_64-unknown-linux-gnu
+          - platform: linux
+            architecture: arm64
+            runner: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-gnu
+          - platform: darwin
+            architecture: amd64
+            runner: macos-15-intel
+            target: x86_64-apple-darwin
+          - platform: darwin
+            architecture: arm64
+            runner: macos-15
+            target: aarch64-apple-darwin
+          - platform: windows
+            architecture: amd64
+            runner: windows-2025
+            target: x86_64-pc-windows-msvc
+          - platform: windows
+            architecture: arm64
+            runner: windows-11-arm
+            target: aarch64-pc-windows-msvc
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install the desktop Rust toolchain
+        shell: bash
+        run: rustup toolchain install "$DESKTOP_RUST-$DESKTOP_TARGET" --profile minimal
+
+      - name: Install Linux desktop libraries
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwayland-dev libxkbcommon-dev libxkbcommon-x11-0
+
+      - name: Build the desktop executable on Linux or macOS
+        if: runner.os != 'Windows'
+        shell: bash
+        env:
+          MACOSX_DEPLOYMENT_TARGET: '13.0'
+        run: |
+          cargo "+$DESKTOP_RUST-$DESKTOP_TARGET" build --locked --release \
+            --no-default-features --features desktop --bin unbind-desktop --target "$DESKTOP_TARGET"
+
+      - name: Build the Windows desktop executable with the Unbind icon
+        if: runner.os == 'Windows'
+        shell: pwsh
+        env:
+          RUSTFLAGS: '-C target-feature=+crt-static'
+        run: |
+          $sdk = Join-Path ${env:ProgramFiles(x86)} 'Windows Kits\10\bin'
+          $versions = Get-ChildItem -LiteralPath $sdk -Directory |
+            Where-Object { $_.Name -match '^\d+\.\d+\.\d+\.\d+$' } |
+            Sort-Object { [version]$_.Name } -Descending
+          $hostArchitectures = if ($env:DESKTOP_ARCH -eq 'arm64') { 'arm64', 'x64' } else { 'x64' }
+          $resourceCompiler = $versions | ForEach-Object {
+            foreach ($architecture in $hostArchitectures) {
+              Get-Item -LiteralPath (Join-Path $_.FullName "$architecture\rc.exe") -ErrorAction SilentlyContinue
+            }
+          } | Select-Object -First 1
+          if (!$resourceCompiler) { throw 'Windows SDK resource compiler is unavailable.' }
+          $source = Join-Path $env:RUNNER_TEMP 'Unbind.rc'
+          $resource = Join-Path $env:RUNNER_TEMP 'Unbind.res'
+          '1 ICON "icon.ico"' | Set-Content -LiteralPath $source -Encoding ascii
+          & $resourceCompiler.FullName /nologo /fo $resource /I (Join-Path $PWD 'assets') $source
+          if ($LASTEXITCODE -ne 0) { throw 'Compiling the Windows icon failed.' }
+          cargo "+$env:DESKTOP_RUST-$env:DESKTOP_TARGET" rustc --locked --release `
+            --no-default-features --features desktop --bin unbind-desktop --target "$env:DESKTOP_TARGET" `
+            -- -C "link-arg=$resource"
+          if ($LASTEXITCODE -ne 0) { throw 'Building Unbind Desktop failed.' }
+
+      - name: Verify and package the desktop executable
+        shell: pwsh
+        run: |
+          $fileName = if ($IsWindows) { 'unbind-desktop.exe' } else { 'unbind-desktop' }
+          $python = if ($IsWindows) { 'python' } else { 'python3' }
+          $binary = Join-Path $PWD "target/$env:DESKTOP_TARGET/release/$fileName"
+          $versionFile = Join-Path $env:RUNNER_TEMP 'desktop-version.txt'
+          $process = Start-Process -FilePath $binary -ArgumentList '--version' -NoNewWindow -Wait -PassThru `
+            -RedirectStandardOutput $versionFile
+          $version = (Get-Content -LiteralPath $versionFile -Raw).Trim()
+          if ($process.ExitCode -ne 0 -or ($version -split '\s+')[-1] -ne $env:DESKTOP_VERSION) {
+            throw "Expected Unbind Desktop $env:DESKTOP_VERSION from $binary, got: $version"
+          }
+          & $python scripts/package-desktop.py $env:DESKTOP_PLATFORM $env:DESKTOP_ARCH `
+            $env:DESKTOP_VERSION $binary desktop-dist
+          if ($LASTEXITCODE -ne 0) { throw 'Packaging Unbind Desktop failed.' }
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: desktop-${{ matrix.platform }}-${{ matrix.architecture }}
+          path: desktop-dist/unbind-desktop-*
+          compression-level: 0
+          if-no-files-found: error
+          retention-days: 7
 
   deploy:
     name: Deploy to Railway
@@ -156,8 +308,11 @@ jobs:
 
   release:
     name: Publish signed version
-    if: startsWith(github.ref, 'refs/tags/v')
-    needs: build
+    if: >-
+      always() && github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') &&
+      needs.build.result == 'success' && needs.desktop-plan.result == 'success' &&
+      (needs.desktop-plan.outputs.enabled == 'false' || needs.desktop-build.result == 'success')
+    needs: [build, desktop-plan, desktop-build]
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     permissions:
@@ -173,6 +328,13 @@ jobs:
           merge-multiple: true
           path: dist
 
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        if: needs.desktop-plan.outputs.enabled == 'true'
+        with:
+          pattern: desktop-*
+          merge-multiple: true
+          path: dist
+
       - name: Prepare versioned assets
         shell: bash
         run: |
@@ -183,6 +345,16 @@ jobs:
           fi
           python3 scripts/package-release.py "$version" dist
           (cd dist && sha256sum --check SHA256SUMS)
+
+      - name: Record checksums for the desktop downloads
+        if: needs.desktop-plan.outputs.enabled == 'true'
+        working-directory: dist
+        shell: bash
+        run: |
+          packages=(unbind-desktop-darwin-{amd64,arm64}.zip
+                    unbind-desktop-linux-{amd64,arm64}.tar.gz
+                    unbind-desktop-windows-{amd64,arm64}.zip)
+          sha256sum "${packages[@]}" > unbind-desktop-SHA256SUMS
 
       - name: Sign the release manifest
         shell: bash
@@ -201,10 +373,16 @@ jobs:
             echo 'The signing key does not match the public key pinned in Unbind.' >&2
             exit 1
           fi
-          openssl pkeyutl -sign -inkey "$key_dir/private.pem" -rawin \
-            -in dist/release.json -out dist/release.json.sig
-          openssl pkeyutl -verify -pubin -inkey "$key_dir/public.pem" -rawin \
-            -in dist/release.json -sigfile dist/release.json.sig
+          manifests=(dist/release.json)
+          if [ -f dist/unbind-desktop-SHA256SUMS ]; then
+            manifests+=(dist/unbind-desktop-SHA256SUMS)
+          fi
+          for manifest in "${manifests[@]}"; do
+            openssl pkeyutl -sign -inkey "$key_dir/private.pem" -rawin \
+              -in "$manifest" -out "$manifest.sig"
+            openssl pkeyutl -verify -pubin -inkey "$key_dir/public.pem" -rawin \
+              -in "$manifest" -sigfile "$manifest.sig"
+          done
 
       - name: Wait for the public version route
         shell: bash
@@ -243,14 +421,18 @@ jobs:
       - name: Verify the public versioned downloads
         shell: bash
         run: |
-          for artifact in release.json release.json.sig SHA256SUMS unbind.rb unbind.json unbind-winget.zip; do
+          artifacts=(release.json release.json.sig SHA256SUMS unbind.rb unbind.json unbind-winget.zip)
+          if [ -f dist/unbind-desktop-SHA256SUMS ]; then
+            artifacts+=(unbind-desktop-SHA256SUMS unbind-desktop-SHA256SUMS.sig)
+          fi
+          for artifact in "${artifacts[@]}"; do
             curl -fsSL --retry 10 --retry-all-errors --retry-delay 2 --max-time 18 \
               "https://unbind.dev/downloads/releases/${GITHUB_REF_NAME#v}/$artifact" | cmp "dist/$artifact" -
           done
 
   winget:
     name: Validate and install the WinGet package
-    if: always() && (github.event_name == 'workflow_dispatch' || (startsWith(github.ref, 'refs/tags/v') && needs.release.result == 'success'))
+    if: always() && ((github.event_name == 'workflow_dispatch' && !inputs.desktop_only) || (startsWith(github.ref, 'refs/tags/v') && needs.release.result == 'success'))
     needs: release
     runs-on: windows-2025
     timeout-minutes: 15

@@ -17,15 +17,20 @@
   </header>
   <main class="shell secondary-page">
     <h1>Connect to a shared port<span>.</span></h1>
-    <p id="join-message" class="intro">Open the full share link to get the connection command.</p>
+    <p id="join-message" class="intro">Open the full share link to connect.</p>
+    <div id="join-open" class="join-actions" hidden>
+      <a id="join-app-link" class="primary-link">Open in Unbind</a>
+      <button type="button" data-copy hidden>Copy invite</button>
+      <code id="join-link" hidden></code>
+    </div>
+    <p id="join-setup" hidden>Paste this invite in the desktop app’s Connect tab, or enable desktop links from Settings to open it here.</p>
+    <p id="join-cli" hidden>Using the command-line client?</p>
     <div id="join-terminal" class="terminal" hidden>
       <pre><code id="join-command"></code></pre>
       <button type="button" data-copy aria-label="Copy connection command" hidden>Copy</button>
     </div>
-    <p id="join-open" hidden><a id="join-app-link">Open in Unbind</a>. Enable this once with <code>unbind register-link</code>.</p>
-    <noscript><p>Copy the full link from the address bar and pass it to <code>unbind connect '&lt;link&gt;' --listen 8080</code>.</p></noscript>
-    <p id="join-next" hidden>The service will be available on this computer at <code>127.0.0.1:8080</code>. Use <code>--listen</code> to choose a different port.</p>
-    <p>Need Unbind on this computer? <a href="/downloads/">Get the installer</a>.</p>
+    <noscript><p>Copy the full link from the address bar and paste it in Unbind’s Connect tab.</p></noscript>
+    <p>Need Unbind on this computer? <a href="/downloads/#desktop-title">Download the desktop app</a>.</p>
   </main>
   <footer class="site-footer shell"><p>Inspired by <a href="https://github.com/tailscale/tailcat" rel="noreferrer">Tailcat by Tailscale</a>.</p></footer>
 </body>

@@ -18,9 +18,6 @@ function updateCommands() {
       command.textContent = `& ([scriptblock]::Create((irm ${powershellQuote(origin + "/install.ps1")}))) ${powershellQuote(origin)}${verify ? " -Verify" : ""}`;
     }
   }
-
-  const share = document.querySelector("[data-share]");
-  if (share) share.textContent = `unbind share 3000 --server ${singleQuote(origin)}`;
 }
 
 function enableCopyButtons() {
@@ -28,6 +25,7 @@ function enableCopyButtons() {
 
   for (const button of document.querySelectorAll("[data-copy]")) {
     const command = button.parentElement.querySelector("code");
+    const label = button.textContent;
     const status = document.createElement("span");
     status.className = "visually-hidden";
     status.setAttribute("role", "status");
@@ -41,16 +39,21 @@ function enableCopyButtons() {
         button.textContent = "Copied";
         status.textContent = "Command copied.";
       } catch {
-        button.textContent = "Select to copy";
-        const range = document.createRange();
-        range.selectNodeContents(command);
-        const selection = window.getSelection();
-        selection.removeAllRanges();
-        selection.addRange(range);
-        status.textContent = "Command selected. Use your keyboard shortcut to copy it.";
+        if (command.hidden) {
+          button.textContent = "Copy from address bar";
+          status.textContent = "Copy the invite from the address bar.";
+        } else {
+          button.textContent = "Select to copy";
+          const range = document.createRange();
+          range.selectNodeContents(command);
+          const selection = window.getSelection();
+          selection.removeAllRanges();
+          selection.addRange(range);
+          status.textContent = "Command selected. Use your keyboard shortcut to copy it.";
+        }
       }
       resetTimer = window.setTimeout(() => {
-        button.textContent = "Copy";
+        button.textContent = label;
         status.textContent = "";
       }, 2500);
     });
@@ -63,28 +66,33 @@ function showJoinCommand() {
 
   const terminal = document.getElementById("join-terminal");
   const command = document.getElementById("join-command");
-  const next = document.getElementById("join-next");
+  const setup = document.getElementById("join-setup");
+  const cli = document.getElementById("join-cli");
   const open = document.getElementById("join-open");
   const appLink = document.getElementById("join-app-link");
+  const copyLink = document.getElementById("join-link");
   const fragment = window.location.hash;
   const valid = /^#v1\.[A-Za-z0-9_-]{43}\.[A-Za-z0-9_-]{43}$/.test(fragment);
 
   terminal.hidden = !valid;
-  next.hidden = !valid;
+  setup.hidden = !valid;
+  cli.hidden = !valid;
   open.hidden = !valid;
   if (valid) {
     const invite = new URL("/join", window.location.origin);
     invite.hash = fragment;
     const token = btoa(invite.href).replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/, "");
     appLink.href = `unbind://connect#${token}`;
+    copyLink.textContent = invite.href;
     command.textContent = `unbind connect ${singleQuote(invite.href)} --listen 8080`;
-    message.textContent = "Run this command on the computer you want to connect from.";
+    message.textContent = "Open the invite on the computer you want to connect from.";
   } else {
     appLink.removeAttribute("href");
+    copyLink.textContent = "";
     command.textContent = "";
     message.textContent = fragment
       ? "The invite is incomplete or invalid. Ask the host for the full share link."
-      : "Open the full share link to get the connection command.";
+      : "Open the full share link to connect.";
   }
 }
 

@@ -1,26 +1,3 @@
-#[path = "client/background.rs"]
-mod background;
-#[path = "client/forwarding.rs"]
-mod forwarding;
-#[path = "client/identity.rs"]
-mod identity;
-#[path = "client/links.rs"]
-mod links;
-#[path = "client/management.rs"]
-mod management;
-#[path = "client/network.rs"]
-mod network;
-#[path = "client/profiles.rs"]
-mod profiles;
-#[path = "client/session.rs"]
-mod session;
-#[path = "client/signaling.rs"]
-mod signaling;
-#[path = "client/transport.rs"]
-mod transport;
-#[path = "client/update.rs"]
-mod update;
-
 use std::{
     net::{Ipv4Addr, SocketAddr},
     path::{Path, PathBuf},
@@ -28,12 +5,19 @@ use std::{
 
 use anyhow::{Context, Result, ensure};
 use clap::{Args, Parser, Subcommand};
-use forwarding::{Binding, ClientRoutes, Service, Services};
-use management::Action;
 use serde_json::Value;
-use session::{Client, InviteOptions, Share};
-use signaling::DEFAULT_SERVER;
-use transport::{DEFAULT_STUN, parse_stun};
+use unbind::{
+    background,
+    forwarding::{Binding, ClientRoutes, Service, Services},
+    identity, links,
+    management::{self, Action},
+    network, parse_listen, parse_target, profiles,
+    session::{self, Client, InviteOptions, Share},
+    signaling::DEFAULT_SERVER,
+    split_route,
+    transport::{DEFAULT_STUN, parse_stun},
+    update,
+};
 
 #[derive(Parser)]
 #[command(version, about)]
@@ -552,56 +536,4 @@ async fn bind_client(
         });
     }
     Ok(Client::Named(ClientRoutes::bind(bindings).await?))
-}
-
-fn split_route(input: &str) -> Result<(&str, &str)> {
-    let (name, address) = input
-        .split_once('=')
-        .context("Expected a named route as NAME=ADDRESS")?;
-    ensure!(
-        !name.is_empty() && !address.is_empty(),
-        "Expected a named route as NAME=ADDRESS"
-    );
-    Ok((name, address))
-}
-
-fn parse_target(input: &str) -> Result<String> {
-    if let Ok(port) = input.parse::<u16>() {
-        ensure!(port != 0, "The target port must be between 1 and 65535");
-        return Ok(SocketAddr::from((Ipv4Addr::LOCALHOST, port)).to_string());
-    }
-    let (host, port) = input
-        .rsplit_once(':')
-        .context("Expected PORT or HOST:PORT")?;
-    let port: u16 = port.parse().context("Invalid target port")?;
-    ensure!(
-        port != 0
-            && !host.is_empty()
-            && !host.contains(['/', '\\', '@', '#', '?'])
-            && !host.chars().any(char::is_whitespace)
-            && (!host.contains([':', '[', ']']) || input.parse::<SocketAddr>().is_ok()),
-        "Expected PORT or HOST:PORT. Use brackets around an IPv6 address."
-    );
-    Ok(input.to_owned())
-}
-
-fn parse_listen(input: &str) -> Result<SocketAddr> {
-    if let Ok(port) = input.parse::<u16>() {
-        return Ok(SocketAddr::from((Ipv4Addr::LOCALHOST, port)));
-    }
-    input.parse().context("Expected PORT or IP:PORT")
-}
-
-async fn shutdown() -> Result<()> {
-    #[cfg(unix)]
-    {
-        let mut term = tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())?;
-        tokio::select! {
-            result = tokio::signal::ctrl_c() => result?,
-            _ = term.recv() => {}
-        }
-    }
-    #[cfg(not(unix))]
-    tokio::signal::ctrl_c().await?;
-    Ok(())
 }

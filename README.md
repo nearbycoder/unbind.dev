@@ -2,9 +2,13 @@
 
 # Unbind
 
-Unbind shares a TCP service through a direct, encrypted connection between two computers. Install the Rust CLI on both peers. The host shares one port and sends an invite link. The other peer opens a local TCP listener connected to that service.
+Unbind shares TCP and UDP services and sends files through a direct, encrypted connection between two computers. Both peers can use the native desktop app or the Rust CLI. The host creates an invite and the guest connects through a local port.
 
-## Install
+## Desktop app
+
+Download Unbind for macOS, Windows, or Linux. Open **Share** to create a link or **Connect** to use one. The app also handles file transfers, approvals, saved profiles, and network diagnostics. [Download the app](https://unbind.dev/downloads/#desktop-title) · [Desktop setup](desktop/README.md)
+
+## Install the CLI
 
 On Linux and macOS:
 

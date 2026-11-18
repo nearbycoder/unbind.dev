@@ -11,6 +11,18 @@ unbind rollback
 
 The updater verifies the manifest signature with the Ed25519 public key pinned in the binary, then checks the selected executable's size and SHA-256. After installing, it keeps one verified local backup for rollback. Use the original package manager for installations it manages.
 
+## Desktop archives
+
+Desktop archives use the same signing key with a separate checksum file. Save the archive, `unbind-desktop-SHA256SUMS`, and `unbind-desktop-SHA256SUMS.sig` from the same release. From the repository root, produce a DER public key from the pinned key in this repository and verify the detached signature.
+
+```sh
+{ printf '%s' 302a300506032b6570032100; cat release/public-key.hex; } | xxd -r -p > unbind-public.der
+openssl pkeyutl -verify -pubin -keyform DER -inkey unbind-public.der -rawin \
+  -in unbind-desktop-SHA256SUMS -sigfile unbind-desktop-SHA256SUMS.sig
+```
+
+Compare the archive’s SHA-256 with its line in the verified checksum file. Use `sha256sum` on Linux, `shasum -a 256` on macOS, or `Get-FileHash -Algorithm SHA256` on Windows.
+
 ## Maintainers
 
 Use a Git tag `vX.Y.Z` on the commit whose `Cargo.toml` version is `X.Y.Z`. GitHub Actions signs the manifest using the secret `UNBIND_RELEASE_SIGNING_KEY`. Its value is an Ed25519 private key in PEM format. The workflow derives the public key and compares it with `release/public-key.hex` before signing. Keep the private key in a secret manager and enable immutable releases in the repository's settings before publishing a tag.

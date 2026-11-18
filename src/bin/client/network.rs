@@ -44,6 +44,21 @@ pub struct Options {
     socket: Arc<OnceCell<Arc<DirectSocket>>>,
 }
 
+impl Options {
+    pub fn new(
+        udp_bind: Option<SocketAddr>,
+        public_endpoint: Option<SocketAddr>,
+        map_port: Option<SocketAddr>,
+    ) -> Self {
+        Self {
+            udp_bind,
+            public_endpoint,
+            map_port,
+            ..Self::default()
+        }
+    }
+}
+
 #[derive(Default)]
 pub struct Resources(Option<Arc<DirectSocket>>);
 
@@ -159,7 +174,7 @@ pub async fn configure(settings: &mut SettingEngine, options: &Options) -> Resul
     Ok(Resources(Some(Arc::clone(socket))))
 }
 
-fn parse_router(input: &str) -> Result<SocketAddr> {
+pub fn parse_router(input: &str) -> Result<SocketAddr> {
     let router = match input.parse::<IpAddr>() {
         Ok(ip) => SocketAddr::new(ip, 5351),
         Err(_) => input.parse().context("Expected a PCP router IP address")?,
@@ -402,13 +417,26 @@ fn pcp_ip(ip: IpAddr) -> [u8; 16] {
     }
 }
 
-#[derive(Serialize)]
-struct Probe {
-    target: String,
-    result: String,
+#[derive(Clone, Serialize)]
+pub struct Probe {
+    pub target: String,
+    pub result: String,
 }
 
 pub async fn doctor(server: &str, stun: &[String], json: bool) -> Result<()> {
+    let reports = diagnose(server, stun).await?;
+    if json {
+        println!("{}", serde_json::to_string_pretty(&reports)?);
+    } else {
+        for report in reports {
+            println!("{}: {}", report.target, report.result);
+        }
+        println!("Run share and connect across the two actual networks to test a direct path.");
+    }
+    Ok(())
+}
+
+pub async fn diagnose(server: &str, stun: &[String]) -> Result<Vec<Probe>> {
     let origin = crate::signaling::Invite::new(server)?.origin;
     let mut checks = JoinSet::new();
     checks.spawn(async move {
@@ -443,15 +471,7 @@ pub async fn doctor(server: &str, stun: &[String], json: bool) -> Result<()> {
         reports.push(report?);
     }
     reports.sort_by(|lhs, rhs| lhs.target.cmp(&rhs.target));
-    if json {
-        println!("{}", serde_json::to_string_pretty(&reports)?);
-    } else {
-        for report in reports {
-            println!("{}: {}", report.target, report.result);
-        }
-        println!("Run share and connect across the two actual networks to test a direct path.");
-    }
-    Ok(())
+    Ok(reports)
 }
 
 async fn probe_stun(servers: Vec<String>, ipv6: bool) -> Probe {
