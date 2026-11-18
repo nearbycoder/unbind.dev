@@ -259,6 +259,7 @@ async fn run_share(
             }
         }
     };
+    drop(control);
     let mut closes = JoinSet::new();
     for room in rooms.into_values() {
         closes.spawn(room.shutdown());
@@ -724,6 +725,7 @@ async fn run_connect(
         result = control => result,
         result = &mut stopped => result,
     };
+    drop(management);
     request_stop.send_replace(true);
     sessions.await?;
     exit

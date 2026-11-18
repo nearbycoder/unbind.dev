@@ -31,6 +31,8 @@ fn main() -> Result<()> {
     let headless = !args.is_empty();
 
     rune::set_app_id(platform::APP_ID);
+    // The networking runtime drains sessions after the native event loop returns.
+    rune::orderly_exit();
     let _ = rune::set_app_icon(&include_bytes!("../../site/apple-touch-icon.png")[..]);
     let app = App::new(AppSpec {
         min_size: Some((760.0, 590.0)),
