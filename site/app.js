@@ -53,17 +53,23 @@ function showJoinCommand() {
   const terminal = document.getElementById("join-terminal");
   const command = document.getElementById("join-command");
   const next = document.getElementById("join-next");
+  const open = document.getElementById("join-open");
+  const appLink = document.getElementById("join-app-link");
   const fragment = window.location.hash;
   const valid = /^#v1\.[A-Za-z0-9_-]{43}\.[A-Za-z0-9_-]{43}$/.test(fragment);
 
   terminal.hidden = !valid;
   next.hidden = !valid;
+  open.hidden = !valid;
   if (valid) {
     const invite = new URL("/join", window.location.origin);
     invite.hash = fragment;
+    const token = btoa(invite.href).replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/, "");
+    appLink.href = `unbind://connect#${token}`;
     command.textContent = `unbind connect ${singleQuote(invite.href)} --listen 8080`;
     message.textContent = "Run this command on the computer you want to connect from.";
   } else {
+    appLink.removeAttribute("href");
     command.textContent = "";
     message.textContent = fragment
       ? "The invite is incomplete or invalid. Ask the host for the full share link."

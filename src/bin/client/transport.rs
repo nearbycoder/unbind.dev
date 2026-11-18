@@ -1,6 +1,9 @@
 use std::{
     future::poll_fn,
-    sync::Arc,
+    sync::{
+        Arc,
+        atomic::{AtomicBool, AtomicU64, Ordering},
+    },
     task::{Poll, ready},
     time::Duration,
 };
@@ -28,29 +31,63 @@ use webrtc::{
     },
 };
 
+use crate::{
+    forwarding::{self, ClientRoutes, Services},
+    network,
+};
+
 pub const DEFAULT_STUN: &str = "stun:stun.l.google.com:19302,stun:stun.cloudflare.com:3478";
 const CONNECT_TIMEOUT: Duration = Duration::from_secs(18);
 const MAX_STREAMS: usize = 64;
 const MESSAGE_SIZE: usize = 16 * 1024;
 const SEND_BUFFER_LIMIT: usize = 512 * 1024;
+const FORWARDING_ATTRIBUTE: &str = "a=x-unbind-forwarding:1";
 
 pub enum Relay<'a> {
     Listen(&'a TcpListener),
     Forward(&'a str),
+    Stdio,
+    Serve(&'a Services),
+    Connect(&'a ClientRoutes),
+}
+
+#[derive(Clone, Default)]
+pub struct Traffic(Arc<TrafficCounters>);
+
+#[derive(Default)]
+struct TrafficCounters {
+    sent: AtomicU64,
+    received: AtomicU64,
+}
+
+impl Traffic {
+    pub fn snapshot(&self) -> (u64, u64) {
+        (
+            self.0.sent.load(Ordering::Relaxed),
+            self.0.received.load(Ordering::Relaxed),
+        )
+    }
+}
+
+pub struct DirectStatus {
+    pub path: String,
 }
 
 pub struct Peer {
     rtc: Arc<RTCPeerConnection>,
     channel: Option<oneshot::Receiver<Arc<DataChannel>>>,
+    traffic: Traffic,
+    _network: network::Resources,
 }
 
 impl Peer {
-    pub async fn new(stun: &[String]) -> Result<Self> {
+    pub async fn with_network(stun: &[String], options: &network::Options) -> Result<Self> {
         let mut settings = SettingEngine::default();
         settings.detach_data_channels();
         settings.set_network_types(vec![NetworkType::Udp4, NetworkType::Udp6]);
         settings.set_ice_multicast_dns_mode(MulticastDnsMode::Disabled);
         settings.set_include_loopback_candidate(true);
+        let network = network::configure(&mut settings, options).await?;
         let api = APIBuilder::new().with_setting_engine(settings).build();
         let ice_servers = if stun.is_empty() {
             vec![]
@@ -90,19 +127,28 @@ impl Peer {
         Ok(Self {
             rtc,
             channel: Some(receive_channel),
+            traffic: Traffic::default(),
+            _network: network,
         })
     }
 
-    pub async fn offer(&self) -> Result<String> {
-        self.gather(self.rtc.create_offer(None).await?).await
+    pub async fn offer_for(&self, advanced: bool) -> Result<String> {
+        self.gather(self.rtc.create_offer(None).await?, advanced)
+            .await
+    }
+
+    pub fn supports_forwarding(sdp: &str) -> bool {
+        sdp.lines().any(|line| line == FORWARDING_ATTRIBUTE)
     }
 
     pub async fn answer(&self, offer: String) -> Result<String> {
         validate_sdp(&offer)?;
+        let advanced = Self::supports_forwarding(&offer);
         self.rtc
             .set_remote_description(RTCSessionDescription::offer(offer)?)
             .await?;
-        self.gather(self.rtc.create_answer(None).await?).await
+        self.gather(self.rtc.create_answer(None).await?, advanced)
+            .await
     }
 
     pub async fn accept(&self, answer: String) -> Result<()> {
@@ -113,25 +159,31 @@ impl Peer {
         Ok(())
     }
 
-    async fn gather(&self, desc: RTCSessionDescription) -> Result<String> {
+    async fn gather(&self, desc: RTCSessionDescription, advanced: bool) -> Result<String> {
         let mut complete = self.rtc.gathering_complete_promise().await;
         self.rtc.set_local_description(desc).await?;
         // Snapshot available candidates if a STUN server is unreachable.
         let _ = timeout(Duration::from_secs(6), complete.recv()).await;
-        let local = self
+        let mut sdp = self
             .rtc
             .local_description()
             .await
-            .context("Missing local ICE description")?;
-        validate_sdp(&local.sdp)?;
+            .context("Missing local ICE description")?
+            .sdp;
+        self._network.advertise(&mut sdp);
+        if advanced {
+            let media = sdp
+                .find("\nm=")
+                .context("Missing local media description")?
+                + 1;
+            sdp.insert_str(media, &format!("{FORWARDING_ATTRIBUTE}\r\n"));
+        }
+        validate_sdp(&sdp)?;
         ensure!(
-            local
-                .sdp
-                .lines()
-                .any(|line| line.starts_with("a=candidate:")),
+            sdp.lines().any(|line| line.starts_with("a=candidate:")),
             "No UDP address is available for a direct connection"
         );
-        Ok(local.sdp)
+        Ok(sdp)
     }
 
     pub async fn connect(&mut self) -> Result<Arc<DataChannel>> {
@@ -174,12 +226,35 @@ impl Peer {
 
         let (mux_socket, wire_socket) = tokio::io::duplex(64 * 1024);
         let (wire_read, wire_write) = tokio::io::split(wire_socket);
-        tokio::select! {
-            result = read_channel(&channel, wire_write) => result,
-            result = write_channel(&channel, wire_read) => result,
-            result = multiplex(mux_socket, role) => result,
-            _ = closed.wait_for(|closed| *closed) => bail!("The direct peer connection closed"),
+        let file_complete = Arc::new(AtomicBool::new(false));
+        let result = tokio::select! {
+            result = read_channel(&channel, wire_write, &self.traffic) => result,
+            result = write_channel(&channel, wire_read, &self.traffic) => result,
+            result = run_relay(mux_socket, role, Arc::clone(&file_complete)) => result,
+            _ = closed.wait_for(|closed| *closed) => Err(anyhow::anyhow!("The direct peer connection closed")),
+        };
+        if file_complete.load(Ordering::Acquire) {
+            Ok(())
+        } else {
+            result
         }
+    }
+
+    pub fn traffic(&self) -> Traffic {
+        self.traffic.clone()
+    }
+
+    pub async fn status(&self) -> Option<DirectStatus> {
+        let pair = self
+            .rtc
+            .sctp()
+            .transport()
+            .ice_transport()
+            .get_selected_candidate_pair()
+            .await?;
+        Some(DirectStatus {
+            path: pair.to_string(),
+        })
     }
 
     pub async fn close(&self) {
@@ -216,18 +291,27 @@ pub fn parse_stun(value: &str) -> Result<Vec<String>> {
         .collect()
 }
 
-async fn read_channel(channel: &DataChannel, mut output: WriteHalf<DuplexStream>) -> Result<()> {
+async fn read_channel(
+    channel: &DataChannel,
+    mut output: WriteHalf<DuplexStream>,
+    traffic: &Traffic,
+) -> Result<()> {
     let mut buffer = vec![0; MESSAGE_SIZE];
     loop {
         let size = channel.read(&mut buffer).await?;
         if size == 0 {
             bail!("The direct peer closed the connection");
         }
+        traffic.0.received.fetch_add(size as u64, Ordering::Relaxed);
         output.write_all(&buffer[..size]).await?;
     }
 }
 
-async fn write_channel(channel: &DataChannel, mut input: ReadHalf<DuplexStream>) -> Result<()> {
+async fn write_channel(
+    channel: &DataChannel,
+    mut input: ReadHalf<DuplexStream>,
+    traffic: &Traffic,
+) -> Result<()> {
     let mut buffer = vec![0; MESSAGE_SIZE];
     loop {
         let size = input.read(&mut buffer).await?;
@@ -241,6 +325,7 @@ async fn write_channel(channel: &DataChannel, mut input: ReadHalf<DuplexStream>)
             .write(&Bytes::copy_from_slice(&buffer[..size]))
             .await?;
         ensure!(sent == size, "The direct peer accepted a partial message");
+        traffic.0.sent.fetch_add(sent as u64, Ordering::Relaxed);
     }
 }
 
@@ -249,10 +334,29 @@ enum MuxEvent {
     Outgoing(yamux::Stream),
 }
 
-async fn multiplex(socket: DuplexStream, role: Relay<'_>) -> Result<()> {
+enum LegacyRelay<'a> {
+    Listen(&'a TcpListener),
+    Forward(&'a str),
+}
+
+async fn run_relay(
+    socket: DuplexStream,
+    role: Relay<'_>,
+    file_complete: Arc<AtomicBool>,
+) -> Result<()> {
+    match role {
+        Relay::Listen(listener) => multiplex(socket, LegacyRelay::Listen(listener)).await,
+        Relay::Forward(target) => multiplex(socket, LegacyRelay::Forward(target)).await,
+        Relay::Stdio => forwarding::legacy_stdio(socket).await,
+        Relay::Serve(services) => forwarding::serve(socket, services, file_complete).await,
+        Relay::Connect(routes) => forwarding::connect(socket, routes, file_complete).await,
+    }
+}
+
+async fn multiplex(socket: DuplexStream, role: LegacyRelay<'_>) -> Result<()> {
     let mode = match role {
-        Relay::Listen(_) => yamux::Mode::Client,
-        Relay::Forward(_) => yamux::Mode::Server,
+        LegacyRelay::Listen(_) => yamux::Mode::Client,
+        LegacyRelay::Forward(_) => yamux::Mode::Server,
     };
     let config = yamux::Config::default();
     let mut connection = yamux::Connection::new(socket.compat(), config, mode);
@@ -278,7 +382,7 @@ async fn multiplex(socket: DuplexStream, role: Relay<'_>) -> Result<()> {
                 })
             }) => {
                 match (event?, &role) {
-                    (MuxEvent::Incoming(stream), Relay::Forward(target))
+                    (MuxEvent::Incoming(stream), LegacyRelay::Forward(target))
                         if tasks.len() < MAX_STREAMS =>
                     {
                         let target = target.to_string();
@@ -291,7 +395,7 @@ async fn multiplex(socket: DuplexStream, role: Relay<'_>) -> Result<()> {
                             }
                         });
                     }
-                    (MuxEvent::Outgoing(stream), Relay::Listen(_)) => {
+                    (MuxEvent::Outgoing(stream), LegacyRelay::Listen(_)) => {
                         let local = pending.take().context("Missing local TCP connection")?;
                         tasks.spawn(copy_stream(local, stream));
                     }
@@ -302,8 +406,8 @@ async fn multiplex(socket: DuplexStream, role: Relay<'_>) -> Result<()> {
     }
 }
 
-async fn accept_local(role: &Relay<'_>) -> Result<TcpStream> {
-    if let Relay::Listen(listener) = role {
+async fn accept_local(role: &LegacyRelay<'_>) -> Result<TcpStream> {
+    if let LegacyRelay::Listen(listener) = role {
         let (socket, _) = listener.accept().await?;
         Ok(socket)
     } else {

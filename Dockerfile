@@ -1,7 +1,9 @@
 FROM rust:1.96-bookworm AS build
 WORKDIR /build
 COPY Cargo.toml Cargo.lock ./
+COPY release/public-key.hex release/public-key.hex
 COPY src/ src/
+COPY site/ site/
 RUN cargo build --locked --release --no-default-features --features web --bin unbind-web
 
 COPY dist/ /prebuilt/

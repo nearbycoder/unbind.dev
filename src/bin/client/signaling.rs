@@ -129,22 +129,14 @@ impl Invite {
 }
 
 fn validate_origin(url: &Url) -> Result<()> {
-    let loopback = url.host_str() == Some("localhost")
-        || url
-            .host_str()
-            .and_then(|host| {
-                host.trim_matches(['[', ']'])
-                    .parse::<std::net::IpAddr>()
-                    .ok()
-            })
-            .is_some_and(|ip| ip.is_loopback());
+    let local = url.host_str().is_some_and(crate::network::is_local_host);
     ensure!(
         url.host().is_some()
-            && (url.scheme() == "https" || url.scheme() == "http" && loopback)
+            && (url.scheme() == "https" || url.scheme() == "http" && local)
             && url.username().is_empty()
             && url.password().is_none()
             && url.query().is_none(),
-        "Use an HTTPS rendezvous URL or local loopback HTTP"
+        "Use an HTTPS rendezvous URL or a private LAN HTTP address"
     );
     Ok(())
 }
