@@ -24,6 +24,14 @@
       <h3>Windows PowerShell</h3>
       <div class="terminal"><pre><code data-install="powershell">irm https://unbind.dev/install.ps1 | iex</code></pre><button type="button" data-copy hidden>Copy</button></div>
     </section>
+    <section class="downloads-section" aria-labelledby="verify-title">
+      <h2 id="verify-title">Verify your installation</h2>
+      <p>Compare your installed binary with the current published SHA-256 checksum. An older build can have a different checksum.</p>
+      <h3>macOS and Linux</h3>
+      <div class="terminal"><pre><code data-install="sh" data-verify>curl -fsSL https://unbind.dev/install.sh | sh -s -- --verify</code></pre><button type="button" data-copy hidden>Copy</button></div>
+      <h3>Windows PowerShell</h3>
+      <div class="terminal"><pre><code data-install="powershell" data-verify>&amp; ([scriptblock]::Create((irm 'https://unbind.dev/install.ps1'))) -Verify</code></pre><button type="button" data-copy hidden>Copy</button></div>
+    </section>
     <section class="downloads-section" aria-labelledby="binaries-title">
       <h2 id="binaries-title">Executables</h2>
       <p id="download-status" role="status">Looking for available builds…</p>

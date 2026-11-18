@@ -1,7 +1,7 @@
-param([string] $BaseUrl = 'https://unbind.dev')
+param([string] $BaseUrl = 'https://unbind.dev', [switch] $Verify)
 
 & {
-    param([string] $BaseUrl)
+    param([string] $BaseUrl, [switch] $Verify)
     $ErrorActionPreference = 'Stop'
 
     $BaseUrl = $BaseUrl.TrimEnd('/')
@@ -17,6 +17,13 @@ param([string] $BaseUrl = 'https://unbind.dev')
         default { throw "Unsupported Windows architecture $Architecture." }
     }
 
+    $BinDir = $env:UNBIND_BIN_DIR
+    if (-not $BinDir) { $BinDir = Join-Path $env:LOCALAPPDATA 'Programs\unbind' }
+    $Installed = Join-Path $BinDir 'unbind.exe'
+    if ($Verify -and -not (Test-Path -LiteralPath $Installed -PathType Leaf)) {
+        throw "Unbind is not installed at $Installed."
+    }
+
     $Manifest = (Invoke-WebRequest -UseBasicParsing "$BaseUrl/downloads/SHA256SUMS").Content
     if ($Manifest -is [byte[]]) { $Manifest = [Text.Encoding]::UTF8.GetString($Manifest) }
     $ChecksumPattern = '^([a-fA-F0-9]{64})\s+\*?' + [Regex]::Escape($Asset) + '\s*$'
@@ -25,15 +32,22 @@ param([string] $BaseUrl = 'https://unbind.dev')
     }
     if (-not $Expected) { throw "No published Windows build for $Architecture at $BaseUrl." }
 
-    $BinDir = $env:UNBIND_BIN_DIR
-    if (-not $BinDir) { $BinDir = Join-Path $env:LOCALAPPDATA 'Programs\unbind' }
+    if ($Verify) {
+        $Actual = (Get-FileHash -Algorithm SHA256 -LiteralPath $Installed).Hash
+        if ($Actual -ne $Expected) {
+            throw "Checksum mismatch for $Installed. Expected $Expected, got $Actual. An older installed build may differ from the current release."
+        }
+        Write-Host "Verified SHA-256 for $Installed ($Actual)."
+        return
+    }
+
     $null = New-Item -ItemType Directory -Path $BinDir -Force
     $Staged = Join-Path $BinDir ('.unbind-' + [Guid]::NewGuid().ToString('N') + '.tmp')
     try {
         Invoke-WebRequest -UseBasicParsing "$BaseUrl/downloads/$Asset" -OutFile $Staged
         $Actual = (Get-FileHash -Algorithm SHA256 -LiteralPath $Staged).Hash
         if ($Actual -ne $Expected) { throw "Checksum mismatch for $Asset." }
-        Move-Item -LiteralPath $Staged -Destination (Join-Path $BinDir 'unbind.exe') -Force
+        Move-Item -LiteralPath $Staged -Destination $Installed -Force
     } finally {
         if (Test-Path -LiteralPath $Staged) { Remove-Item -LiteralPath $Staged -Force }
     }
@@ -47,4 +61,4 @@ param([string] $BaseUrl = 'https://unbind.dev')
 
     Write-Host "Installed unbind to $BinDir\unbind.exe"
     Write-Host 'Run unbind --help to get started.'
-} $BaseUrl
+} $BaseUrl -Verify:$Verify

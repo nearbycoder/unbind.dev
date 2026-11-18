@@ -6,6 +6,13 @@ fail() {
   exit 1
 }
 
+verify_only=false
+if [ "${1:-}" = '--verify' ]; then
+  verify_only=true
+  shift
+fi
+[ "$#" -le 1 ] || fail 'Usage: install.sh [--verify] [base_url]'
+
 base_url=${1:-https://unbind.dev}
 base_url=${base_url%/}
 case "$base_url" in
@@ -31,6 +38,10 @@ fi
 
 asset=unbind-$platform-$arch
 bin_dir=${UNBIND_BIN_DIR:-$HOME/.local/bin}
+installed_binary=$bin_dir/unbind
+if [ "$verify_only" = true ] && [ ! -f "$installed_binary" ]; then
+  fail "Installed binary not found at $installed_binary."
+fi
 command -v curl >/dev/null 2>&1 || fail 'Install curl and run this command again.'
 temp_dir=$(mktemp -d)
 staged_binary=''
@@ -52,22 +63,37 @@ case "$expected" in
 esac
 [ "${#expected}" -eq 64 ] || fail "Invalid checksum for $asset."
 
-download "$asset" || fail "Could not download $asset from $base_url."
+binary=$installed_binary
+if [ "$verify_only" = false ]; then
+  download "$asset" || fail "Could not download $asset from $base_url."
+  binary=$temp_dir/$asset
+fi
 if command -v sha256sum >/dev/null 2>&1; then
-  checksum_output=$(sha256sum < "$temp_dir/$asset")
+  checksum_output=$(sha256sum < "$binary")
 elif command -v shasum >/dev/null 2>&1; then
-  checksum_output=$(shasum -a 256 < "$temp_dir/$asset")
+  checksum_output=$(shasum -a 256 < "$binary")
 else
   fail 'Install sha256sum or shasum to check the download.'
 fi
 actual=${checksum_output%% *}
-[ "$expected" = "$actual" ] || fail "Checksum mismatch for $asset."
+if [ "$expected" != "$actual" ]; then
+  printf 'Expected SHA-256: %s\nActual SHA-256:   %s\n' "$expected" "$actual" >&2
+  if [ "$verify_only" = true ]; then
+    fail "Checksum mismatch for $installed_binary. An older build can differ from the current published release."
+  fi
+  fail "Checksum mismatch for $asset."
+fi
+
+if [ "$verify_only" = true ]; then
+  printf 'Verified SHA-256 for %s: %s\n' "$installed_binary" "$actual"
+  exit 0
+fi
 
 mkdir -p "$bin_dir"
 staged_binary=$(mktemp "$bin_dir/.unbind.XXXXXXXXXX")
-cp "$temp_dir/$asset" "$staged_binary"
+cp "$binary" "$staged_binary"
 chmod 0755 "$staged_binary"
-mv -f "$staged_binary" "$bin_dir/unbind"
+mv -f "$staged_binary" "$installed_binary"
 staged_binary=''
 
 printf 'Installed unbind to %s/unbind\n' "$bin_dir"

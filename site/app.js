@@ -11,10 +11,11 @@ function updateCommands() {
   if (origin === "https://unbind.dev") return;
 
   for (const command of document.querySelectorAll("[data-install]")) {
+    const verify = command.hasAttribute("data-verify");
     if (command.dataset.install === "sh") {
-      command.textContent = `curl -fsSL ${singleQuote(origin + "/install.sh")} | sh -s -- ${singleQuote(origin)}`;
+      command.textContent = `curl -fsSL ${singleQuote(origin + "/install.sh")} | sh -s -- ${verify ? "--verify " : ""}${singleQuote(origin)}`;
     } else {
-      command.textContent = `& ([scriptblock]::Create((irm ${powershellQuote(origin + "/install.ps1")}))) ${powershellQuote(origin)}`;
+      command.textContent = `& ([scriptblock]::Create((irm ${powershellQuote(origin + "/install.ps1")}))) ${powershellQuote(origin)}${verify ? " -Verify" : ""}`;
     }
   }
 

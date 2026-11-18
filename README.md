@@ -18,7 +18,25 @@ On Windows, run this in PowerShell:
 irm https://unbind.dev/install.ps1 | iex
 ```
 
-The installers verify the downloaded binary against its SHA-256 checksum. You can also [download a binary manually](https://unbind.dev/downloads/). If your shell cannot find `unbind` after the Linux or macOS install, add `$HOME/.local/bin` to your `PATH`.
+The installers check the binary against its published SHA-256 checksum before installing it. You can also [download a binary manually](https://unbind.dev/downloads/). If your shell cannot find `unbind` after the Linux or macOS install, add `$HOME/.local/bin` to your `PATH`.
+
+### Verify the installed binary
+
+Compare the installed executable with the current published checksum. The check reads the executable without running or replacing it. An older build can have a legitimately different checksum.
+
+On Linux and macOS:
+
+```sh
+curl -fsSL https://unbind.dev/install.sh | sh -s -- --verify
+```
+
+On Windows, run this in PowerShell:
+
+```powershell
+& ([scriptblock]::Create((irm 'https://unbind.dev/install.ps1'))) -Verify
+```
+
+If you used a custom `UNBIND_BIN_DIR` when installing, set it to the same directory when verifying.
 
 ## Share and connect
 

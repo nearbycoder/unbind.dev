@@ -125,3 +125,21 @@ jobs:
           curl -fsS --retry 5 --max-time 15 https://unbind.dev/healthz | grep -Fx ok
           curl -fsS --retry 5 --max-time 15 https://unbind.dev/downloads/SHA256SUMS \
             | diff -u dist/SHA256SUMS -
+
+      - name: Test the installed binary checksum
+        shell: bash
+        run: |
+          UNBIND_BIN_DIR="$(mktemp -d)"
+          export UNBIND_BIN_DIR
+          trap 'rm -rf "$UNBIND_BIN_DIR"' EXIT
+
+          curl -fsS --retry 5 --max-time 15 https://unbind.dev/install.sh | cmp site/install.sh -
+          sh site/install.sh
+          sh site/install.sh --verify
+
+          printf '\nchecksum test\n' >> "$UNBIND_BIN_DIR/unbind"
+          if result=$(sh site/install.sh --verify 2>&1); then
+            echo 'The installer accepted a modified executable.' >&2
+            exit 1
+          fi
+          printf '%s\n' "$result" | grep -F 'Checksum mismatch'
