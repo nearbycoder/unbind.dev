@@ -5,7 +5,7 @@ use std::{
     process::Command,
 };
 
-#[cfg(any(target_os = "linux", target_os = "macos"))]
+#[cfg(any(target_os = "linux", target_os = "macos", windows))]
 use std::{fs, path::PathBuf};
 
 use anyhow::{Context, Result, ensure};
@@ -107,10 +107,16 @@ fn register_platform(binary: &Path) -> Result<()> {
         .replace('$', "\\\\$")
         .replace('`', "\\\\`")
         .replace('%', "%%");
+    let icons = data.join("icons/hicolor/scalable/apps");
+    fs::create_dir_all(&icons)?;
+    fs::write(
+        icons.join("dev.unbind.Link.svg"),
+        include_bytes!("../../../assets/icon.svg"),
+    )?;
     fs::write(
         directory.join("dev.unbind.Link.desktop"),
         format!(
-            "[Desktop Entry]\nType=Application\nName=Unbind\nExec=\"{escaped}\" open-link %u\nTerminal=true\nNoDisplay=true\nMimeType=x-scheme-handler/unbind;\n"
+            "[Desktop Entry]\nType=Application\nName=Unbind\nIcon=dev.unbind.Link\nExec=\"{escaped}\" open-link %u\nTerminal=true\nNoDisplay=true\nMimeType=x-scheme-handler/unbind;\n"
         ),
     )?;
     run(
@@ -126,6 +132,13 @@ fn register_platform(binary: &Path) -> Result<()> {
 #[cfg(windows)]
 fn register_platform(binary: &Path) -> Result<()> {
     const SCHEME: &str = r"HKCU\Software\Classes\unbind";
+    let directory =
+        PathBuf::from(env::var_os("LOCALAPPDATA").context("LOCALAPPDATA is unavailable")?)
+            .join("unbind");
+    fs::create_dir_all(&directory)?;
+    let icon = directory.join("unbind.ico");
+    fs::write(&icon, include_bytes!("../../../assets/icon.ico"))?;
+    let icon_value = format!("\"{}\",0", icon.display());
     run(
         Command::new("reg").args(["add", SCHEME, "/ve", "/d", "URL:Unbind", "/f"]),
         "Creating the Unbind URL scheme",
@@ -143,6 +156,17 @@ fn register_platform(binary: &Path) -> Result<()> {
             "/f",
         ]),
         "Registering Unbind as a URL protocol",
+    )?;
+    run(
+        Command::new("reg").args([
+            "add",
+            r"HKCU\Software\Classes\unbind\DefaultIcon",
+            "/ve",
+            "/d",
+            &icon_value,
+            "/f",
+        ]),
+        "Registering the Unbind icon",
     )?;
     let handler = format!("\"{}\" open-link \"%1\"", binary.display());
     run(
@@ -188,12 +212,35 @@ fn register_platform(binary: &Path) -> Result<()> {
             .arg(&source),
         "Building the Unbind link handler",
     )?;
-    let plist = staging_app.join("Contents/Info.plist");
+    let contents = staging_app.join("Contents");
+    let resources = contents.join("Resources");
+    let icon_catalog = resources.join("Assets.car");
+    let plist = contents.join("Info.plist");
+    fs::write(
+        resources.join("Unbind.icns"),
+        include_bytes!("../../../assets/icon.icns"),
+    )?;
+    let mut configure = Command::new("/usr/libexec/PlistBuddy");
+    if icon_catalog.is_file() {
+        // macOS prefers the stock applet asset catalog over an ICNS file.
+        fs::remove_file(icon_catalog)?;
+        if Command::new("/usr/libexec/PlistBuddy")
+            .args(["-c", "Print :CFBundleIconName"])
+            .arg(&plist)
+            .output()?
+            .status
+            .success()
+        {
+            configure.args(["-c", "Delete :CFBundleIconName"]);
+        }
+    }
     run(
-        Command::new("/usr/libexec/PlistBuddy")
+        configure
             .args([
                 "-c",
                 "Set :CFBundleIdentifier dev.unbind.link-handler",
+                "-c",
+                "Set :CFBundleIconFile Unbind.icns",
                 "-c",
                 "Add :CFBundleURLTypes array",
                 "-c",
@@ -208,7 +255,13 @@ fn register_platform(binary: &Path) -> Result<()> {
             .arg(plist),
         "Configuring the Unbind link handler",
     )?;
-    fs::write(staging_app.join("Contents/.unbind-link-handler"), "")?;
+    fs::write(contents.join(".unbind-link-handler"), "")?;
+    run(
+        Command::new("/usr/bin/codesign")
+            .args(["--force", "--sign", "-", "--preserve-metadata=entitlements"])
+            .arg(&staging_app),
+        "Signing the local Unbind link handler",
+    )?;
 
     let previous = stage.path().join("previous.app");
     if app.exists() {

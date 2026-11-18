@@ -6,13 +6,14 @@
   <meta name="description" content="Download Unbind for Linux, macOS, or Windows.">
   <title>Downloads · Unbind</title>
   <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
   <link rel="stylesheet" href="/style.css">
   <script src="/app.js" defer></script>
 </head>
 <body>
   <header class="site-header shell">
-    <a class="brand" href="/" aria-label="Unbind home"><img src="/icon.svg" width="30" height="30" alt="">unbind</a>
-    <nav aria-label="Main navigation"><a href="/#quickstart">Quickstart</a></nav>
+    <a class="brand" href="/" aria-label="Unbind home"><img src="/icon.svg" width="32" height="32" alt="">unbind</a>
+    <nav aria-label="Main navigation"><a href="/#features">Features</a><a href="/#quickstart">Quickstart</a></nav>
   </header>
   <main class="shell secondary-page">
     <h1>Downloads<span>.</span></h1>
@@ -20,17 +21,26 @@
     <section class="downloads-section" aria-labelledby="install-title">
       <h2 id="install-title">Install</h2>
       <h3>macOS and Linux</h3>
-      <div class="terminal"><pre><code data-install="sh">curl -fsSL https://unbind.dev/install.sh | sh</code></pre><button type="button" data-copy hidden>Copy</button></div>
+      <div class="terminal"><pre><code data-install="sh">curl -fsSL https://unbind.dev/install.sh | sh</code></pre><button type="button" data-copy aria-label="Copy macOS and Linux install command" hidden>Copy</button></div>
       <h3>Windows PowerShell</h3>
-      <div class="terminal"><pre><code data-install="powershell">irm https://unbind.dev/install.ps1 | iex</code></pre><button type="button" data-copy hidden>Copy</button></div>
+      <div class="terminal"><pre><code data-install="powershell">irm https://unbind.dev/install.ps1 | iex</code></pre><button type="button" data-copy aria-label="Copy Windows install command" hidden>Copy</button></div>
+    </section>
+    <section class="downloads-section" aria-labelledby="packages-title">
+      <h2 id="packages-title">Package managers</h2>
+      <ul class="package-list">
+        <li><a href="https://github.com/nearbycoder/unbind.dev/blob/main/packages/README.md#homebrew">Homebrew <span>macOS and Linux</span></a></li>
+        <li><a href="https://github.com/nearbycoder/unbind.dev/blob/main/packages/README.md#scoop">Scoop <span>Windows</span></a></li>
+        <li><a href="https://github.com/nearbycoder/unbind.dev/blob/main/packages/README.md#winget">WinGet <span>Windows · local manifest</span></a></li>
+      </ul>
     </section>
     <section class="downloads-section" aria-labelledby="verify-title">
       <h2 id="verify-title">Verify your installation</h2>
       <p>Compare your installed binary with the current published SHA-256 checksum. An older build can have a different checksum.</p>
       <h3>macOS and Linux</h3>
-      <div class="terminal"><pre><code data-install="sh" data-verify>curl -fsSL https://unbind.dev/install.sh | sh -s -- --verify</code></pre><button type="button" data-copy hidden>Copy</button></div>
+      <div class="terminal"><pre><code data-install="sh" data-verify>curl -fsSL https://unbind.dev/install.sh | sh -s -- --verify</code></pre><button type="button" data-copy aria-label="Copy macOS and Linux verification command" hidden>Copy</button></div>
       <h3>Windows PowerShell</h3>
-      <div class="terminal"><pre><code data-install="powershell" data-verify>&amp; ([scriptblock]::Create((irm 'https://unbind.dev/install.ps1'))) -Verify</code></pre><button type="button" data-copy hidden>Copy</button></div>
+      <div class="terminal"><pre><code data-install="powershell" data-verify>&amp; ([scriptblock]::Create((irm 'https://unbind.dev/install.ps1'))) -Verify</code></pre><button type="button" data-copy aria-label="Copy Windows verification command" hidden>Copy</button></div>
+      <p>Run <code>unbind update --check</code> to check for a signed release and <code>unbind rollback</code> to restore the build saved before the last update.</p>
     </section>
     <section class="downloads-section" aria-labelledby="binaries-title">
       <h2 id="binaries-title">Executables</h2>

@@ -3,65 +3,123 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Share a local TCP service over a direct, encrypted connection between two computers.">
-  <title>Unbind · Share a local port</title>
+  <meta name="description" content="Share local ports, SSH, and files between two computers over an encrypted peer-to-peer connection. One command to share, one link to connect.">
+  <title>Unbind · Share local ports peer to peer</title>
   <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
   <link rel="stylesheet" href="/style.css">
   <script src="/app.js" defer></script>
 </head>
 <body>
+  <a class="skip-link" href="#main">Skip to content</a>
   <header class="site-header shell">
-    <a class="brand" href="/" aria-label="Unbind home"><img src="/icon.svg" width="30" height="30" alt="">unbind</a>
+    <a class="brand" href="/" aria-label="Unbind home"><img src="/icon.svg" width="32" height="32" alt="">unbind</a>
     <nav aria-label="Main navigation">
+      <a href="#features">Features</a>
       <a href="#quickstart">Quickstart</a>
-      <a href="/downloads/">Downloads</a>
+      <a class="nav-download" href="/downloads/">Downloads</a>
     </nav>
   </header>
-  <main class="shell">
+  <main id="main" class="shell">
     <section class="hero" aria-labelledby="title">
       <div>
-        <h1 id="title">Share a<br>local port<span>.</span></h1>
-        <p class="intro">Run one command to share a local TCP service. Send the link to another computer to connect directly over an encrypted tunnel.</p>
+        <h1 id="title">Share a port.<br><span>Send a link.</span></h1>
+        <p class="intro">Give another computer access to your dev server, database, or SSH server over a direct, encrypted connection. Run Unbind on both ends and send an invite.</p>
         <div class="terminal install">
           <pre><code data-install="sh">curl -fsSL https://unbind.dev/install.sh | sh</code></pre>
-          <button type="button" data-copy hidden>Copy</button>
+          <button type="button" data-copy aria-label="Copy macOS and Linux install command" hidden>Copy</button>
         </div>
-        <p class="subtext"><a href="/downloads/">Platform downloads and Windows installer</a></p>
+        <p class="hero-platforms"><a href="/downloads/">Get Unbind for macOS, Linux, or Windows <span aria-hidden="true">↗</span></a></p>
       </div>
-      <div class="diagram" aria-label="The host service and the connecting computer communicate over a direct encrypted tunnel" role="img">
-        <div class="node"><span class="node-icon">&gt;_</span><div><small>HOST COMPUTER</small><strong>Local service</strong></div><code>:3000</code></div>
-        <div class="wire"><span></span><p>DIRECT TUNNEL</p></div>
-        <div class="node"><span class="node-icon">&gt;_</span><div><small>CONNECTING COMPUTER</small><strong>Local listener</strong></div><code>:8080</code></div>
+      <div class="diagram" role="img" aria-label="A service on port 3000 on the host is available on port 8080 on the guest computer through a direct encrypted tunnel.">
+        <div class="diagram-caption" aria-hidden="true"><span></span> Peer-to-peer connection</div>
+        <div class="node" aria-hidden="true">
+          <span class="node-icon">&gt;_</span>
+          <div><small>Host computer</small><strong>Local service</strong></div>
+          <code>:3000</code>
+        </div>
+        <div class="wire" aria-hidden="true">
+          <img src="/icon.svg" width="38" height="38" alt="">
+          <span>Direct encrypted tunnel</span>
+        </div>
+        <div class="node" aria-hidden="true">
+          <span class="node-icon">&gt;_</span>
+          <div><small>Guest computer</small><strong>Local listener</strong></div>
+          <code>:8080</code>
+        </div>
+      </div>
+    </section>
+    <section class="features" id="features" aria-labelledby="features-title">
+      <h2 id="features-title">Features</h2>
+      <div class="feature-grid">
+        <article class="feature-card">
+          <h3>Share what you’re running</h3>
+          <dl>
+            <div><dt>Multiple TCP and UDP ports</dt><dd>Share an app, its API, and a UDP service under one invite. Guests choose the local port for each named service.</dd></div>
+            <div><dt>SSH from your usual terminal</dt><dd>Use Unbind as an SSH ProxyCommand and connect with your existing SSH client and keys.</dd></div>
+            <div><dt>Send a file directly</dt><dd>Give one recipient a file invite. Unbind checks the SHA-256 before saving the file.</dd></div>
+          </dl>
+        </article>
+        <article class="feature-card">
+          <h3>Choose who gets in</h3>
+          <dl>
+            <div><dt>Links, QR codes, and desktop handoff</dt><dd>Copy an invite or show a QR code. Guests with the link handler set up can use Open in Unbind.</dd></div>
+            <div><dt>Expiring and single-use invites</dt><dd>Set a time limit or admit one guest. Give each guest their own link and revoke it to end their access.</dd></div>
+            <div><dt>Approve and remember devices</dt><dd>Review guests before they connect. Remember verified devices you want to recognize on future shares.</dd></div>
+          </dl>
+        </article>
+        <article class="feature-card">
+          <h3>Run shares your way</h3>
+          <dl>
+            <div><dt>Saved profiles and background shares</dt><dd>Save ports and settings in TOML. Run a named share in the background or set it to start at login on supported systems.</dd></div>
+            <div><dt>Reconnect on the same local port</dt><dd>Unbind retries after a network interruption and keeps your local listener at the same address.</dd></div>
+            <div><dt>See live connections and traffic</dt><dd>Check who’s connected, how much traffic each connection has carried, and the network path it’s using. JSON output works with scripts.</dd></div>
+          </dl>
+        </article>
+        <article class="feature-card">
+          <h3>Connect across networks</h3>
+          <dl>
+            <div><dt>Share offline on a LAN</dt><dd>Use built-in connection setup on your local network, or run your own rendezvous server.</dd></div>
+            <div><dt>Check your network</dt><dd>Run <code>unbind doctor</code> to test connection setup over HTTPS and UDP reachability over IPv4 and IPv6.</dd></div>
+            <div><dt>Use a router port mapping</dt><dd>Advertise an existing UDP port forward or let Unbind request a temporary mapping on a router that supports PCP.</dd></div>
+          </dl>
+        </article>
+        <article class="feature-card feature-wide">
+          <div>
+            <h3>Install and update with verification</h3>
+            <a class="feature-link" href="/downloads/">See downloads and install options <span aria-hidden="true">↗</span></a>
+          </div>
+          <dl>
+            <div><dt>macOS, Linux, and Windows</dt><dd>Get x86-64 or ARM64 builds, a terminal installer, Homebrew, Scoop, or a WinGet manifest.</dd></div>
+            <div><dt>Checksums and signed releases</dt><dd>Verify your install with SHA-256. The updater checks the release signature and lets you roll back to your previous build.</dd></div>
+          </dl>
+        </article>
       </div>
     </section>
     <section class="quickstart" id="quickstart" aria-labelledby="quickstart-title">
-      <h2 id="quickstart-title">Quickstart</h2>
-      <p>Install Unbind on both computers. Keep the sharing command running while you use the tunnel.</p>
+      <h2 id="quickstart-title">From local port to shared link</h2>
+      <p>Install Unbind on both computers and keep the share running while you use it.</p>
       <div class="steps">
         <article>
           <h3>Share from the host</h3>
-          <p>Run this on the computer where the service is listening on port 3000. Send the printed link to the other computer.</p>
-          <div class="terminal"><pre><code data-share>unbind share 3000</code></pre><button type="button" data-copy hidden>Copy</button></div>
+          <p>Run this where your service is listening on port 3000, then send the link it prints.</p>
+          <div class="terminal"><pre><code data-share>unbind share 3000</code></pre><button type="button" data-copy aria-label="Copy share command" hidden>Copy</button></div>
         </article>
         <article>
-          <h3>Connect from the other computer</h3>
-          <p>Use the link to start a local listener. For a web service, open <code>http://127.0.0.1:8080</code> on that computer.</p>
-          <div class="terminal"><pre><code>unbind connect '&lt;link&gt;' --listen 8080</code></pre><button type="button" data-copy hidden>Copy</button></div>
+          <h3>Connect from the guest</h3>
+          <p>Replace <code>&lt;link&gt;</code> with the invite. For a web service, open <code>http://127.0.0.1:8080</code> on the guest computer.</p>
+          <div class="terminal"><pre><code>unbind connect '&lt;link&gt;' --listen 8080</code></pre><button type="button" data-copy aria-label="Copy connect command" hidden>Copy</button></div>
         </article>
       </div>
-    </section>
-    <section class="details" aria-labelledby="details-title">
-      <h2 id="details-title">How it connects</h2>
-      <div class="detail-grid">
-        <div><h3>Direct traffic</h3><p>Unbind exchanges connection details to introduce the computers. The TCP service traffic travels directly between them.</p></div>
-        <div><h3>Private links</h3><p>Anyone with the invite can reach the shared port while the host is running. Send it only to people you want to give access.</p></div>
-        <div><h3>Network requirements</h3><p>Both computers need a working UDP path to each other. Networks that block direct UDP can prevent a connection.</p></div>
-      </div>
+      <p class="quickstart-note">The rendezvous service introduces the peers. Traffic flows directly between them over UDP, so a restrictive firewall or NAT can prevent the connection. <a href="https://github.com/nearbycoder/unbind.dev#how-it-connects">Read how it connects</a>.</p>
     </section>
   </main>
   <footer class="site-footer shell">
-    <p>Unbind’s share-and-connect workflow is inspired by <a href="https://github.com/tailscale/tailcat" rel="noreferrer">Tailcat by Tailscale</a>.</p>
-    <a href="/downloads/">Downloads</a>
+    <p>Inspired by <a href="https://github.com/tailscale/tailcat" rel="noreferrer">Tailcat by Tailscale</a>.</p>
+    <div class="footer-links">
+      <a href="https://github.com/nearbycoder/unbind.dev">Source on GitHub</a>
+      <a href="/downloads/">Downloads</a>
+    </div>
   </footer>
 </body>
 </html>

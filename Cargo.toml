@@ -1,6 +1,6 @@
 [package]
 name = "unbind"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2024"
 rust-version = "1.91"
 description = "Share local TCP and UDP services over a direct encrypted peer connection"

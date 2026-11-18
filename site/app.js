@@ -28,11 +28,18 @@ function enableCopyButtons() {
 
   for (const button of document.querySelectorAll("[data-copy]")) {
     const command = button.parentElement.querySelector("code");
+    const status = document.createElement("span");
+    status.className = "visually-hidden";
+    status.setAttribute("role", "status");
+    button.after(status);
     button.hidden = false;
+    let resetTimer;
     button.addEventListener("click", async () => {
+      window.clearTimeout(resetTimer);
       try {
         await navigator.clipboard.writeText(command.textContent);
         button.textContent = "Copied";
+        status.textContent = "Command copied.";
       } catch {
         button.textContent = "Select to copy";
         const range = document.createRange();
@@ -40,8 +47,12 @@ function enableCopyButtons() {
         const selection = window.getSelection();
         selection.removeAllRanges();
         selection.addRange(range);
+        status.textContent = "Command selected. Use your keyboard shortcut to copy it.";
       }
-      window.setTimeout(() => { button.textContent = "Copy"; }, 2500);
+      resetTimer = window.setTimeout(() => {
+        button.textContent = "Copy";
+        status.textContent = "";
+      }, 2500);
     });
   }
 }
