@@ -3,12 +3,20 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Share local ports, SSH, and files between two computers over an encrypted peer-to-peer connection. One command to share, one link to connect.">
-  <title>Unbind · Share local ports peer to peer</title>
+  <meta name="description" content="Share a local service or send a file directly between two computers. Download Unbind for macOS, Windows, or Linux and connect with an invite.">
+  <meta property="og:title" content="Unbind · Share a port. Send a link.">
+  <meta property="og:description" content="Direct, encrypted port sharing and file transfers for macOS, Windows, and Linux.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://unbind.dev/">
+  <meta property="og:image" content="https://unbind.dev/images/desktop-share.webp">
+  <meta property="og:image:alt" content="The Share tab in Unbind Desktop">
+  <title>Unbind · Share a port. Send a link.</title>
+  <link rel="canonical" href="https://unbind.dev/">
   <link rel="icon" href="/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
   <link rel="stylesheet" href="/style.css">
-  <script src="/app.js" defer></script>
+  <link rel="stylesheet" href="/home.css">
+  <script src="/home.js" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
@@ -16,108 +24,232 @@
     <a class="brand" href="/" aria-label="Unbind home"><img src="/icon.svg" width="32" height="32" alt="">unbind</a>
     <nav aria-label="Main navigation">
       <a href="#features">Features</a>
-      <a href="#quickstart">Quickstart</a>
+      <a href="#how-it-works">How it works</a>
+      <a href="/guide/">Guide</a>
       <a class="nav-download" href="/downloads/">Downloads</a>
     </nav>
   </header>
   <main id="main" class="shell">
-    <section class="hero" aria-labelledby="title">
-      <div>
+    <section class="product-hero" aria-labelledby="title">
+      <div class="hero-copy">
         <h1 id="title">Share a port.<br><span>Send a link.</span></h1>
-        <p class="intro">Give another computer access to your dev server, database, or SSH server over a direct, encrypted connection. Run Unbind on both ends and send an invite.</p>
+        <p class="intro">Give another computer access to a local service or send it a file over a direct, encrypted connection. Open Unbind on both computers and connect with an invite.</p>
         <div class="hero-actions">
           <a class="primary-link" href="/downloads/#desktop-title">Download Unbind</a>
-          <a href="#quickstart">How it works</a>
+          <a href="#how-it-works">See how it connects</a>
         </div>
         <p class="hero-platforms">macOS, Windows, and Linux</p>
       </div>
-      <div class="diagram" role="img" aria-label="A service on port 3000 on the host is available on port 8080 on the guest computer through a direct encrypted tunnel.">
-        <div class="diagram-caption" aria-hidden="true"><span></span> Peer-to-peer connection</div>
-        <div class="node" aria-hidden="true">
-          <span class="node-icon">&gt;_</span>
-          <div><small>Host computer</small><strong>Local service</strong></div>
-          <code>:3000</code>
-        </div>
-        <div class="wire" aria-hidden="true">
-          <img src="/icon.svg" width="38" height="38" alt="">
-          <span>Direct encrypted tunnel</span>
-        </div>
-        <div class="node" aria-hidden="true">
-          <span class="node-icon">&gt;_</span>
-          <div><small>Guest computer</small><strong>Local listener</strong></div>
-          <code>:8080</code>
-        </div>
-      </div>
+      <figure class="app-frame hero-frame">
+        <figcaption><strong>Unbind Desktop</strong><span>Share</span></figcaption>
+        <img src="/images/desktop-share.webp" width="1100" height="760" alt="Unbind Share tab with a local port, guest access controls, and saved profiles" fetchpriority="high">
+      </figure>
     </section>
-    <section class="features" id="features" aria-labelledby="features-title">
-      <h2 id="features-title">Features</h2>
-      <div class="feature-grid">
-        <article class="feature-card">
-          <h3>Share what you’re running</h3>
-          <dl>
-            <div><dt>Multiple TCP and UDP ports</dt><dd>Share an app, its API, and a UDP service under one invite. Guests choose the local port for each named service.</dd></div>
-            <div><dt>SSH from your usual terminal</dt><dd>Use Unbind as an SSH ProxyCommand and connect with your existing SSH client and keys.</dd></div>
-            <div><dt>Send a file directly</dt><dd>Give one recipient a file invite. Unbind checks the SHA-256 before saving the file.</dd></div>
-          </dl>
-        </article>
-        <article class="feature-card">
-          <h3>Choose who gets in</h3>
-          <dl>
-            <div><dt>Links, QR codes, and desktop handoff</dt><dd>Copy an invite or show a QR code. Guests with the link handler set up can use Open in Unbind.</dd></div>
-            <div><dt>Expiring and single-use invites</dt><dd>Set a time limit or admit one guest. Give each guest their own link and revoke it to end their access.</dd></div>
-            <div><dt>Approve and remember devices</dt><dd>Review guests before they connect. Remember verified devices you want to recognize on future shares.</dd></div>
-          </dl>
-        </article>
-        <article class="feature-card">
-          <h3>Run shares your way</h3>
-          <dl>
-            <div><dt>Saved profiles and background shares</dt><dd>Save ports and settings in TOML. Run a named share in the background or set it to start at login on supported systems.</dd></div>
-            <div><dt>Reconnect on the same local port</dt><dd>Unbind retries after a network interruption and keeps your local listener at the same address.</dd></div>
-            <div><dt>See live connections and traffic</dt><dd>Check who’s connected, how much traffic each connection has carried, and the network path it’s using. JSON output works with scripts.</dd></div>
-          </dl>
-        </article>
-        <article class="feature-card">
-          <h3>Connect across networks</h3>
-          <dl>
-            <div><dt>Share offline on a LAN</dt><dd>Use built-in connection setup on your local network, or run your own rendezvous server.</dd></div>
-            <div><dt>Check your network</dt><dd>Run <code>unbind doctor</code> to test connection setup over HTTPS and UDP reachability over IPv4 and IPv6.</dd></div>
-            <div><dt>Use a router port mapping</dt><dd>Advertise an existing UDP port forward or let Unbind request a temporary mapping on a router that supports PCP.</dd></div>
-          </dl>
-        </article>
-        <article class="feature-card feature-wide">
-          <div>
-            <h3>Install and update with verification</h3>
-            <a class="feature-link" href="/downloads/">See downloads and install options <span aria-hidden="true">↗</span></a>
+
+    <section class="product-section" id="quickstart" aria-labelledby="quickstart-title">
+      <div class="section-heading">
+        <h2 id="quickstart-title">From a local port to a shared service</h2>
+        <p>Share a web app running on port 3000 from your computer.</p>
+      </div>
+      <ol class="quick-steps">
+        <li>
+          <h3>Create an invite</h3>
+          <p>On the host, open <strong>Share</strong>, enter <code>3000</code>, and select <strong>Create invite</strong>. Copy the invite or show its QR code.</p>
+        </li>
+        <li>
+          <h3>Connect on the guest</h3>
+          <p>On the other computer, paste the invite into <strong>Connect</strong> and set <strong>Listen on</strong> to <code>8080</code>. Select <strong>Connect</strong>.</p>
+        </li>
+        <li>
+          <h3>Open the service</h3>
+          <p>When the session connects, open <code>http://127.0.0.1:8080</code> on the guest. Keep Unbind open on both computers while you use the share.</p>
+        </li>
+      </ol>
+      <a class="section-link" href="/guide/#quickstart">Follow the desktop and CLI quickstart <span aria-hidden="true">↗</span></a>
+    </section>
+
+    <section class="product-section" id="how-it-works" aria-labelledby="connection-title">
+      <div class="section-heading">
+        <h2 id="connection-title">How the connection works</h2>
+        <p>The rendezvous service introduces the computers. After that, service and file traffic flows directly between them.</p>
+      </div>
+      <div class="connection-layout" data-tabs>
+        <div class="connection-board" role="img" aria-label="The host and guest exchange setup messages with the rendezvous service over HTTPS. The encrypted payload travels directly between the host and guest.">
+          <div class="rendezvous-node" aria-hidden="true">
+            <img src="/icon.svg" width="29" height="29" alt="">
+            <div><strong>Rendezvous</strong><span>Connection setup</span></div>
           </div>
-          <dl>
-            <div><dt>macOS, Windows, and Linux</dt><dd>Get the native app or the command-line client for x86-64 and ARM64.</dd></div>
-            <div><dt>Checksums and signed releases</dt><dd>Verify your install with SHA-256. The updater checks the release signature and lets you roll back to your previous build.</dd></div>
-          </dl>
+          <div class="signal-path" aria-hidden="true"><i></i><i></i><i></i></div>
+          <div class="peer-path" aria-hidden="true">
+            <div class="peer-box host-peer"><span>Host</span><strong>Local service</strong><code>:3000</code></div>
+            <div class="direct-path"></div>
+            <div class="peer-box guest-peer"><span>Guest</span><strong>Local listener</strong><code>:8080</code></div>
+          </div>
+          <div class="flow-legend" aria-hidden="true">
+            <span><i></i>HTTPS setup</span>
+            <span><i></i>Direct encrypted traffic</span>
+          </div>
+        </div>
+        <div class="connection-copy">
+          <div class="tab-list" data-tab-list aria-label="Connection stages" hidden>
+            <button type="button" id="flow-tab-invite" aria-controls="flow-invite">Invite</button>
+            <button type="button" id="flow-tab-negotiate" aria-controls="flow-negotiate">Find a route</button>
+            <button type="button" id="flow-tab-forward" aria-controls="flow-forward">Pass traffic</button>
+          </div>
+          <article class="connection-step" id="flow-invite" data-tab-panel>
+            <h3>Create an invite</h3>
+            <p>Unbind registers a short-lived room and gives the host an invite. The secret in the link’s <code>#</code> fragment lets the two clients authenticate the setup messages.</p>
+          </article>
+          <article class="connection-step" id="flow-negotiate" data-tab-panel>
+            <h3>Find a direct path</h3>
+            <p>The clients exchange WebRTC offers and answers over HTTPS. STUN helps each computer discover its UDP address, and ICE tests which pair of addresses can reach each other.</p>
+          </article>
+          <article class="connection-step" id="flow-forward" data-tab-panel>
+            <h3>Pass traffic peer to peer</h3>
+            <p>The guest’s local port sends traffic through the encrypted connection to the service on the host. An established tunnel can keep running while rendezvous is unavailable.</p>
+          </article>
+          <a class="section-link" href="/guide/#network">Read the network guide <span aria-hidden="true">↗</span></a>
+        </div>
+      </div>
+    </section>
+
+    <section class="product-section" id="features" aria-labelledby="features-title">
+      <div class="section-heading">
+        <h2 id="features-title">What you can do with Unbind</h2>
+      </div>
+      <div class="capabilities">
+        <article class="capability">
+          <h3>Share a service</h3>
+          <p>Preview a dev server, connect a database client, or reach SSH through a local port. Share several named TCP and UDP services with the same invite.</p>
+          <a class="section-link" href="/guide/#services">Service forwarding <span aria-hidden="true">↗</span></a>
+        </article>
+        <article class="capability">
+          <h3>Choose who gets in</h3>
+          <p>Send a link or QR code. Set an expiry or make an invite single-use. Approve guests, remember verified devices, and revoke individual invites.</p>
+          <a class="section-link" href="/guide/#invites">Manage guest access <span aria-hidden="true">↗</span></a>
+        </article>
+        <article class="capability">
+          <h3>Send a file directly</h3>
+          <p>Create a file invite for one recipient. They pick where to save the file, and Unbind checks the file’s SHA-256 before saving it.</p>
+          <a class="section-link" href="/guide/#files">Send and receive files <span aria-hidden="true">↗</span></a>
+        </article>
+        <article class="capability">
+          <h3>Run and monitor shares</h3>
+          <p>Save a profile and see peers, routes, and traffic. Unbind can reconnect on the same local port. Use the CLI for JSON status, background shares, and start at login.</p>
+          <a class="section-link" href="/guide/#sessions">Profiles and sessions <span aria-hidden="true">↗</span></a>
+        </article>
+        <article class="capability">
+          <h3>Work with your network</h3>
+          <p>Share offline on a LAN, run diagnostics, or use your own rendezvous server. Configure an existing UDP port forward or request a temporary mapping on a PCP router.</p>
+          <a class="section-link" href="/guide/#network">Network and router setup <span aria-hidden="true">↗</span></a>
+        </article>
+        <article class="capability">
+          <h3>Verify your downloads</h3>
+          <p>Check desktop archives against signed SHA-256 checksums. Verify your CLI installation, choose a signed CLI release, or roll back to the previous executable.</p>
+          <a class="section-link" href="/guide/#verification">Release verification <span aria-hidden="true">↗</span></a>
         </article>
       </div>
     </section>
-    <section class="quickstart" id="quickstart" aria-labelledby="quickstart-title">
-      <h2 id="quickstart-title">From local port to shared link</h2>
-      <p>Open Unbind on both computers. Either can share a service or connect to one.</p>
-      <div class="steps">
-        <article>
-          <h3>Share from the host</h3>
-          <p>Open <strong>Share</strong>, enter the port your service is using, and create an invite. Copy the link or show its QR code.</p>
+
+    <section class="product-section" id="desktop" aria-labelledby="desktop-tour-title">
+      <div class="section-heading">
+        <h2 id="desktop-tour-title">Inside the desktop app</h2>
+        <p>Create shares, manage guests, and diagnose connections from the same native app on both computers.</p>
+      </div>
+      <div class="desktop-tour" data-tabs>
+        <div class="tab-list" data-tab-list aria-label="Desktop app views" hidden>
+          <button type="button" id="tour-tab-connect" aria-controls="tour-connect">Connect</button>
+          <button type="button" id="tour-tab-share" aria-controls="tour-share">Share</button>
+          <button type="button" id="tour-tab-files" aria-controls="tour-files">Files</button>
+          <button type="button" id="tour-tab-sessions" aria-controls="tour-sessions">Sessions</button>
+          <button type="button" id="tour-tab-settings" aria-controls="tour-settings">Settings</button>
+        </div>
+        <article class="tour-panel" id="tour-connect" data-tab-panel>
+          <img src="/images/desktop-connect.webp" width="1100" height="760" alt="Unbind Connect form with fields for an invite and a local listener" loading="lazy">
+          <div class="tour-copy">
+            <h3>Open an invite and pick a local port</h3>
+            <p>Paste an invite, or use <strong>Open in Unbind</strong> from its join page after enabling desktop links. Review it before connecting.</p>
+            <a class="section-link" href="/guide/#quickstart">Connect from another computer <span aria-hidden="true">↗</span></a>
+          </div>
         </article>
-        <article>
-          <h3>Connect from the guest</h3>
-          <p>Paste the invite in <strong>Connect</strong> and choose a local port. If you choose 8080, a web service opens at <code>http://127.0.0.1:8080</code>.</p>
+        <article class="tour-panel" id="tour-share" data-tab-panel>
+          <img src="/images/desktop-share.webp" width="1100" height="760" alt="Unbind Share form with a local port, invite options, and a saved profiles section" loading="lazy">
+          <div class="tour-copy">
+            <h3>Pick what to share</h3>
+            <p>Enter a port or host address. Use <strong>Advanced sharing</strong> for named services or LAN mode, then save common setups as profiles.</p>
+            <a class="section-link" href="/guide/#services">Share TCP and UDP routes <span aria-hidden="true">↗</span></a>
+          </div>
+        </article>
+        <article class="tour-panel" id="tour-files" data-tab-panel>
+          <img src="/images/desktop-files.webp" width="1100" height="760" alt="Unbind Files tab with separate areas for sending a file and choosing where to receive one" loading="lazy">
+          <div class="tour-copy">
+            <h3>Pick a file and send a link</h3>
+            <p>Choose a file on the sender. On the other computer, paste the invite and pick a new destination. Unbind verifies the transfer before saving it.</p>
+            <a class="section-link" href="/guide/#files">Walk through a file transfer <span aria-hidden="true">↗</span></a>
+          </div>
+        </article>
+        <article class="tour-panel" id="tour-sessions" data-tab-panel>
+          <img src="/images/desktop-sessions.webp" width="1100" height="760" alt="Unbind Sessions view showing a host share, a connected guest, and transferred bytes" loading="lazy">
+          <div class="tour-copy">
+            <h3>See what’s connected</h3>
+            <p>Check each listener, the path between peers, and how much data has moved. Approve pending guests, issue or revoke an invite, and stop a share from <strong>Sessions</strong>.</p>
+            <a class="section-link" href="/guide/#sessions">Manage live sessions <span aria-hidden="true">↗</span></a>
+          </div>
+        </article>
+        <article class="tour-panel" id="tour-settings" data-tab-panel>
+          <img src="/images/desktop-settings.webp" width="1100" height="760" alt="Unbind Settings tab showing rendezvous and STUN settings, UDP options, and a Run diagnostics button" loading="lazy">
+          <div class="tour-copy">
+            <h3>Check how you connect</h3>
+            <p>Run diagnostics or configure how Unbind finds the other peer. Enable desktop links to handle invites from your browser.</p>
+            <a class="section-link" href="/guide/#troubleshooting">Diagnose a connection <span aria-hidden="true">↗</span></a>
+          </div>
         </article>
       </div>
-      <p>Prefer a terminal? <a href="https://github.com/nearbycoder/unbind.dev#share-and-connect">Read the CLI quickstart</a>.</p>
-      <p class="quickstart-note">The rendezvous service introduces the peers. Traffic flows directly between them over UDP, so a restrictive firewall or NAT can prevent the connection. <a href="https://github.com/nearbycoder/unbind.dev#how-it-connects">Read how it connects</a>.</p>
+    </section>
+
+    <section class="product-section faq-section" id="faq" aria-labelledby="faq-title">
+      <div class="section-heading">
+        <h2 id="faq-title">Common questions</h2>
+        <p>Find platform setup, network checks, and command examples in the <a href="/guide/">Unbind guide</a>.</p>
+      </div>
+      <div class="faq-list">
+        <details>
+          <summary>Can Unbind connect through double NAT?</summary>
+          <p>It depends on how both networks handle UDP. Unbind tries to find a direct route. A reachable IPv6 path or a UDP mapping can help where supported. The connection fails when a direct UDP path is unavailable. <a href="/guide/#troubleshooting">Check the network on both peers</a>.</p>
+        </details>
+        <details>
+          <summary>What can a guest do from the browser?</summary>
+          <p>The join page lets the guest open the invite in Unbind or copy it. The guest runs the desktop app or CLI to connect, then opens a shared web service from its local address.</p>
+        </details>
+        <details>
+          <summary>Can I choose a different port on each computer?</summary>
+          <p>Yes. The host sets the service port, and the guest selects an available local port. To use several ports under one invite, enter the matching route names on both computers.</p>
+        </details>
+        <details>
+          <summary>What happens when the host quits or the network changes?</summary>
+          <p>Quitting the desktop app ends the shares it started. After a network interruption, the guest can reconnect on the same local port, but applications may need to reopen their existing connections.</p>
+        </details>
+        <details>
+          <summary>Can I connect on a LAN without internet access?</summary>
+          <p>Yes. The host can select LAN mode to run rendezvous locally. The guest uses the link from the same reachable private network. <a href="/guide/#lan">Set up a LAN share</a>.</p>
+        </details>
+      </div>
+    </section>
+
+    <section class="product-section closing" aria-labelledby="closing-title">
+      <div>
+        <h2 id="closing-title">Open Unbind on both computers</h2>
+        <p>Install the desktop app or CLI, then create your first invite.</p>
+      </div>
+      <a class="primary-link" href="/downloads/">Get Unbind</a>
     </section>
   </main>
   <footer class="site-footer shell">
     <p>Inspired by <a href="https://github.com/tailscale/tailcat" rel="noreferrer">Tailcat by Tailscale</a>.</p>
     <div class="footer-links">
+      <a href="/guide/">Guide</a>
+      <a href="/downloads/releases/">Releases</a>
       <a href="https://github.com/nearbycoder/unbind.dev">Source on GitHub</a>
-      <a href="/downloads/">Downloads</a>
     </div>
   </footer>
 </body>

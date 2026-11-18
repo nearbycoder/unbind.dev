@@ -3,67 +3,275 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Download the Unbind desktop app or command-line client for Linux, macOS, or Windows.">
-  <title>Downloads · Unbind</title>
+  <meta name="description" content="Get Unbind Desktop or the CLI for macOS, Windows, and Linux. Find installation instructions, package managers, release signatures, and checksums.">
+  <title>Download Unbind</title>
+  <link rel="canonical" href="https://unbind.dev/downloads/">
   <link rel="icon" href="/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
   <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/downloads.css">
   <script src="/app.js" defer></script>
 </head>
 <body>
+  <a class="skip-link" href="#main">Skip to content</a>
   <header class="site-header shell">
     <a class="brand" href="/" aria-label="Unbind home"><img src="/icon.svg" width="32" height="32" alt="">unbind</a>
-    <nav aria-label="Main navigation"><a href="/#features">Features</a><a href="/#quickstart">Quickstart</a></nav>
+    <nav aria-label="Main navigation">
+      <a href="/#features">Features</a>
+      <a href="/#how-it-works">How it works</a>
+      <a href="/guide/">Guide</a>
+      <a class="nav-download" href="/downloads/" aria-current="page">Downloads</a>
+    </nav>
   </header>
-  <main class="shell secondary-page">
-    <h1>Downloads<span>.</span></h1>
-    <p class="intro">Choose the desktop app or command-line client for your computer.</p>
-    <section class="downloads-section" aria-labelledby="desktop-title">
-      <h2 id="desktop-title">Desktop app</h2>
-      <ul class="package-list">
-        <li><a href="/downloads/releases/latest/unbind-desktop-darwin-arm64.zip">macOS · Apple silicon <span>ZIP</span></a></li>
-        <li><a href="/downloads/releases/latest/unbind-desktop-darwin-amd64.zip">macOS · Intel <span>ZIP</span></a></li>
-        <li><a href="/downloads/releases/latest/unbind-desktop-windows-amd64.zip">Windows · x86-64 <span>ZIP</span></a></li>
-        <li><a href="/downloads/releases/latest/unbind-desktop-windows-arm64.zip">Windows · ARM64 <span>ZIP</span></a></li>
-        <li><a href="/downloads/releases/latest/unbind-desktop-linux-amd64.tar.gz">Linux · x86-64 <span>TAR.GZ</span></a></li>
-        <li><a href="/downloads/releases/latest/unbind-desktop-linux-arm64.tar.gz">Linux · ARM64 <span>TAR.GZ</span></a></li>
-      </ul>
-      <p>Extract the archive and open Unbind. See the <a href="https://github.com/nearbycoder/unbind.dev/blob/main/desktop/README.md">desktop setup guide</a> for platform requirements and invite links.</p>
+  <main id="main" class="shell download-center">
+    <section class="download-intro" aria-labelledby="download-title">
+      <div>
+        <h1 id="download-title">Download Unbind<span>.</span></h1>
+        <p class="intro">Share and connect with the desktop app. Use the CLI for headless hosts, scripts, and SSH.</p>
+      </div>
+      <nav class="download-jumps" aria-label="On this page">
+        <a class="primary-link" href="#desktop-title">Desktop app</a>
+        <a class="jump-link" href="#install-title">CLI</a>
+        <a class="jump-link" href="#verify-title">Verify a download</a>
+      </nav>
     </section>
-    <section class="downloads-section" aria-labelledby="install-title">
-      <h2 id="install-title">Install the CLI</h2>
-      <h3>macOS and Linux</h3>
-      <div class="terminal"><pre><code data-install="sh">curl -fsSL https://unbind.dev/install.sh | sh</code></pre><button type="button" data-copy aria-label="Copy macOS and Linux install command" hidden>Copy</button></div>
-      <h3>Windows PowerShell</h3>
-      <div class="terminal"><pre><code data-install="powershell">irm https://unbind.dev/install.ps1 | iex</code></pre><button type="button" data-copy aria-label="Copy Windows install command" hidden>Copy</button></div>
+
+    <section class="download-section" aria-labelledby="desktop-title">
+      <div class="download-section-head">
+        <div>
+          <h2 id="desktop-title">Desktop app</h2>
+          <p>Choose a build for your computer. Install Unbind on both ends of the connection.</p>
+        </div>
+        <a href="/guide/#quickstart">Follow the quickstart <span aria-hidden="true">↗</span></a>
+      </div>
+      <div class="platform-grid">
+        <article class="platform-card" aria-labelledby="macos-title">
+          <div class="platform-heading">
+            <span class="platform-mark" aria-hidden="true">⌘</span>
+            <div>
+              <h3 id="macos-title">macOS</h3>
+              <p>macOS 13 or later</p>
+            </div>
+          </div>
+          <ul class="build-options" role="list">
+            <li>
+              <a href="/downloads/releases/latest/unbind-desktop-darwin-arm64.zip" aria-label="Apple silicon, download macOS ARM64 ZIP">
+                <span><strong>Apple silicon</strong><small>ARM64 · ZIP</small></span>
+                <span class="download-arrow" aria-hidden="true">↓</span>
+              </a>
+            </li>
+            <li>
+              <a href="/downloads/releases/latest/unbind-desktop-darwin-amd64.zip" aria-label="Intel, download macOS x86-64 ZIP">
+                <span><strong>Intel</strong><small>x86-64 · ZIP</small></span>
+                <span class="download-arrow" aria-hidden="true">↓</span>
+              </a>
+            </li>
+          </ul>
+          <p class="platform-setup">Unzip, move <code>Unbind.app</code> to Applications, and open it.</p>
+          <details class="download-details">
+            <summary>Which build and first launch</summary>
+            <div class="detail-copy">
+              <p>Open <strong>About This Mac</strong> from the Apple menu. An Apple <strong>Chip</strong> uses Apple silicon. An Intel <strong>Processor</strong> uses the Intel build. <a href="https://support.apple.com/en-us/116943">Apple’s processor guide</a></p>
+              <p>The app bundle uses ad-hoc signing. macOS may request first-launch approval in <strong>Privacy &amp; Security</strong>. <a href="https://support.apple.com/en-us/102445">Apple’s opening instructions</a></p>
+            </div>
+          </details>
+        </article>
+
+        <article class="platform-card" aria-labelledby="windows-title">
+          <div class="platform-heading">
+            <span class="platform-mark platform-mark-windows" aria-hidden="true"><span></span></span>
+            <div>
+              <h3 id="windows-title">Windows</h3>
+              <p>Portable executable</p>
+            </div>
+          </div>
+          <ul class="build-options" role="list">
+            <li>
+              <a href="/downloads/releases/latest/unbind-desktop-windows-amd64.zip" aria-label="x86-64, download Windows x86-64 ZIP">
+                <span><strong>x86-64</strong><small>Intel or AMD · ZIP</small></span>
+                <span class="download-arrow" aria-hidden="true">↓</span>
+              </a>
+            </li>
+            <li>
+              <a href="/downloads/releases/latest/unbind-desktop-windows-arm64.zip" aria-label="ARM64, download Windows ARM64 ZIP">
+                <span><strong>ARM64</strong><small>Arm-based PC · ZIP</small></span>
+                <span class="download-arrow" aria-hidden="true">↓</span>
+              </a>
+            </li>
+          </ul>
+          <p class="platform-setup">Extract the ZIP and open <code>Unbind.exe</code>.</p>
+          <details class="download-details">
+            <summary>Which build and first launch</summary>
+            <div class="detail-copy">
+              <p>Check <strong>System type</strong> under <strong>Settings → System → About</strong>. Choose ARM64 for an Arm-based processor, or x86-64 for an x64-based processor. <a href="https://support.microsoft.com/en-us/windows/experience/find-information-about-your-windows-device">Microsoft’s device guide</a></p>
+              <p>The executable has no Windows publisher signature. Windows may show a publisher warning on first launch. The release archive has a <a href="#desktop-verify-title">signed checksum</a>.</p>
+            </div>
+          </details>
+        </article>
+
+        <article class="platform-card" aria-labelledby="linux-title">
+          <div class="platform-heading">
+            <span class="platform-mark platform-mark-linux" aria-hidden="true">&gt;_</span>
+            <div>
+              <h3 id="linux-title">Linux</h3>
+              <p>Ubuntu 24.04 or compatible glibc</p>
+            </div>
+          </div>
+          <ul class="build-options" role="list">
+            <li>
+              <a href="/downloads/releases/latest/unbind-desktop-linux-amd64.tar.gz" aria-label="x86-64, download Linux x86-64 tar.gz">
+                <span><strong>x86-64</strong><small>Intel or AMD · TAR.GZ</small></span>
+                <span class="download-arrow" aria-hidden="true">↓</span>
+              </a>
+            </li>
+            <li>
+              <a href="/downloads/releases/latest/unbind-desktop-linux-arm64.tar.gz" aria-label="ARM64, download Linux ARM64 tar.gz">
+                <span><strong>ARM64</strong><small>AArch64 · TAR.GZ</small></span>
+                <span class="download-arrow" aria-hidden="true">↓</span>
+              </a>
+            </li>
+          </ul>
+          <p class="platform-setup">Extract the archive and open <code>Unbind/unbind-desktop</code>.</p>
+          <details class="download-details">
+            <summary>Which build and requirements</summary>
+            <div class="detail-copy">
+              <p>Run <code>uname -m</code>. Choose x86-64 for <code>x86_64</code> or ARM64 for <code>aarch64</code>.</p>
+              <p>The app needs X11 or Wayland and working Vulkan graphics. Open the included <code>README.txt</code> for Ubuntu library names. Run the archive’s optional <code>./install.sh</code> to add Unbind to your application menu for your account.</p>
+            </div>
+          </details>
+        </article>
+      </div>
+      <aside class="download-note" aria-label="Desktop invite links">
+        <strong>Open invites from your browser</strong>
+        <p>In Unbind, choose <strong>Settings → Enable desktop links</strong>. When someone sends a link, choose <strong>Open in Unbind</strong> to review the invite in the app.</p>
+      </aside>
     </section>
-    <section class="downloads-section" aria-labelledby="packages-title">
-      <h2 id="packages-title">CLI package managers</h2>
-      <ul class="package-list">
-        <li><a href="https://github.com/nearbycoder/unbind.dev/blob/main/packages/README.md#homebrew">Homebrew <span>macOS and Linux</span></a></li>
-        <li><a href="https://github.com/nearbycoder/unbind.dev/blob/main/packages/README.md#scoop">Scoop <span>Windows</span></a></li>
-        <li><a href="https://github.com/nearbycoder/unbind.dev/blob/main/packages/README.md#winget">WinGet <span>Windows · local manifest</span></a></li>
-      </ul>
+
+    <section class="download-section" aria-labelledby="install-title">
+      <div class="download-section-head">
+        <div>
+          <h2 id="install-title">Install the CLI</h2>
+          <p>The installers select a build for your computer and check its published SHA-256 before installing.</p>
+        </div>
+        <a href="/guide/#quickstart">Share and connect from a terminal <span aria-hidden="true">↗</span></a>
+      </div>
+      <div class="command-grid">
+        <article class="install-card">
+          <h3>macOS and Linux</h3>
+          <div class="terminal">
+            <pre><code data-install="sh">curl -fsSL https://unbind.dev/install.sh | sh</code></pre>
+            <button type="button" data-copy aria-label="Copy macOS and Linux installation command" hidden>Copy</button>
+          </div>
+          <p>The default destination is <code>~/.local/bin</code>. Add it to your PATH if your shell cannot find <code>unbind</code>.</p>
+        </article>
+        <article class="install-card">
+          <h3>Windows PowerShell</h3>
+          <div class="terminal">
+            <pre><code data-install="powershell">irm https://unbind.dev/install.ps1 | iex</code></pre>
+            <button type="button" data-copy aria-label="Copy Windows installation command" hidden>Copy</button>
+          </div>
+          <p>Open a new terminal after installation if it does not find <code>unbind</code>.</p>
+        </article>
+      </div>
+
+      <section class="download-subsection" aria-labelledby="packages-title">
+        <h3 id="packages-title">CLI package managers</h3>
+        <div class="package-methods">
+          <details class="download-details">
+            <summary><strong>Homebrew</strong><span>macOS and Linux</span></summary>
+            <div class="detail-copy">
+              <p>Review the <a href="https://github.com/nearbycoder/homebrew-unbind">Unbind tap</a> before granting the formula trust.</p>
+              <div class="terminal">
+                <pre><code>brew tap nearbycoder/unbind
+brew trust --formula nearbycoder/unbind/unbind
+brew install nearbycoder/unbind/unbind</code></pre>
+                <button type="button" data-copy aria-label="Copy Homebrew installation commands" hidden>Copy</button>
+              </div>
+            </div>
+          </details>
+          <details class="download-details">
+            <summary><strong>Scoop</strong><span>Windows</span></summary>
+            <div class="detail-copy">
+              <p>Add the <a href="https://github.com/nearbycoder/scoop-unbind">Unbind bucket</a> in PowerShell.</p>
+              <div class="terminal">
+                <pre><code>scoop bucket add unbind https://github.com/nearbycoder/scoop-unbind
+scoop install unbind/unbind</code></pre>
+                <button type="button" data-copy aria-label="Copy Scoop installation commands" hidden>Copy</button>
+              </div>
+            </div>
+          </details>
+          <details class="download-details">
+            <summary><strong>WinGet</strong><span>Windows · Local manifest</span></summary>
+            <div class="detail-copy">
+              <p>Download the local manifest bundle. If local manifests are disabled, an administrator can enable them with <code>winget settings --enable LocalManifestFiles</code>.</p>
+              <div class="terminal">
+                <pre><code>irm 'https://unbind.dev/downloads/releases/latest/unbind-winget.zip' -OutFile unbind-winget.zip
+Expand-Archive unbind-winget.zip -DestinationPath unbind-winget
+winget install --manifest .\unbind-winget</code></pre>
+                <button type="button" data-copy aria-label="Copy WinGet local manifest commands" hidden>Copy</button>
+              </div>
+            </div>
+          </details>
+        </div>
+      </section>
+
+      <section class="download-subsection" aria-labelledby="binaries-title">
+        <h3 id="binaries-title">Manual CLI downloads</h3>
+        <p id="download-status" role="status">Looking for available executables…</p>
+        <ul id="download-list" class="download-list" hidden></ul>
+        <p id="download-checksums" hidden><a href="/downloads/SHA256SUMS">Checksums for these executables</a></p>
+        <p><a href="/downloads/releases/">Browse versioned executables and package manifests</a></p>
+        <noscript><p>The <a href="/downloads/SHA256SUMS">checksum list</a> includes the filenames for the published executables.</p></noscript>
+      </section>
     </section>
-    <section class="downloads-section" aria-labelledby="verify-title">
-      <h2 id="verify-title">Verify your CLI installation</h2>
-      <p>Compare your installed binary with the current published SHA-256 checksum. An older build can have a different checksum.</p>
-      <h3>macOS and Linux</h3>
-      <div class="terminal"><pre><code data-install="sh" data-verify>curl -fsSL https://unbind.dev/install.sh | sh -s -- --verify</code></pre><button type="button" data-copy aria-label="Copy macOS and Linux verification command" hidden>Copy</button></div>
-      <h3>Windows PowerShell</h3>
-      <div class="terminal"><pre><code data-install="powershell" data-verify>&amp; ([scriptblock]::Create((irm 'https://unbind.dev/install.ps1'))) -Verify</code></pre><button type="button" data-copy aria-label="Copy Windows verification command" hidden>Copy</button></div>
-      <p>Run <code>unbind update --check</code> to check for a signed release and <code>unbind rollback</code> to restore the build saved before the last update.</p>
-    </section>
-    <section class="downloads-section" aria-labelledby="binaries-title">
-      <h2 id="binaries-title">CLI executables</h2>
-      <p id="download-status" role="status">Looking for available builds…</p>
-      <ul id="download-list" class="download-list" hidden></ul>
-      <p id="download-checksums" hidden><a href="/downloads/SHA256SUMS">SHA-256 checksums</a></p>
-      <p><a href="/downloads/releases/">Versioned releases, signatures, and package manifests</a></p>
-      <p><a href="/third-party-notices.txt">Third-party notices</a></p>
-      <noscript><p>See <a href="/downloads/SHA256SUMS">SHA-256 checksums</a> for the names of published builds.</p></noscript>
+
+    <section class="download-section" aria-labelledby="verify-title">
+      <div class="download-section-head">
+        <div>
+          <h2 id="verify-title">Verify a download</h2>
+          <p>Use the files published alongside the release you downloaded.</p>
+        </div>
+        <a href="/guide/#verification">Read the verification guide <span aria-hidden="true">↗</span></a>
+      </div>
+      <div class="verification-grid">
+        <article class="verification-card" aria-labelledby="desktop-verify-title">
+          <h3 id="desktop-verify-title">Desktop archives</h3>
+          <p>Verify the checksum file’s Ed25519 signature with the pinned public key. Then compare the archive’s SHA-256 to the matching entry.</p>
+          <ul class="resource-links">
+            <li><a href="/downloads/releases/latest/unbind-desktop-SHA256SUMS">Desktop SHA-256 checksums</a></li>
+            <li><a href="/downloads/releases/latest/unbind-desktop-SHA256SUMS.sig">Detached signature</a></li>
+            <li><a href="/downloads/releases/">Versioned release archive</a></li>
+          </ul>
+        </article>
+        <article class="verification-card" aria-labelledby="cli-verify-title">
+          <h3 id="cli-verify-title">Verify an installed CLI</h3>
+          <p>Run the verifier for your platform. It compares your executable with the current installer checksum. An older version can have a different valid checksum.</p>
+          <h4>macOS and Linux</h4>
+          <div class="terminal">
+            <pre><code data-install="sh" data-verify>curl -fsSL https://unbind.dev/install.sh | sh -s -- --verify</code></pre>
+            <button type="button" data-copy aria-label="Copy macOS and Linux verification command" hidden>Copy</button>
+          </div>
+          <h4>Windows PowerShell</h4>
+          <div class="terminal">
+            <pre><code data-install="powershell" data-verify>&amp; ([scriptblock]::Create((irm 'https://unbind.dev/install.ps1'))) -Verify</code></pre>
+            <button type="button" data-copy aria-label="Copy Windows verification command" hidden>Copy</button>
+          </div>
+        </article>
+      </div>
+      <aside class="download-note" aria-label="CLI updates and rollback">
+        <strong>CLI updates and rollback</strong>
+        <p>Run <code>unbind update --check</code> to check for a signed release and <code>unbind update</code> to install it. Run <code>unbind rollback</code> to restore the previous executable saved by the updater. For a package-manager installation, update through the same manager.</p>
+      </aside>
     </section>
   </main>
-  <footer class="site-footer shell"><p>Inspired by <a href="https://github.com/tailscale/tailcat" rel="noreferrer">Tailcat by Tailscale</a>.</p></footer>
+  <footer class="site-footer shell">
+    <p>Inspired by <a href="https://github.com/tailscale/tailcat" rel="noreferrer">Tailcat by Tailscale</a>.</p>
+    <div class="footer-links">
+      <a href="/guide/">Guide</a>
+      <a href="/downloads/releases/">Release archive</a>
+      <a href="/third-party-notices.txt">Third-party notices</a>
+      <a href="https://github.com/nearbycoder/unbind.dev">Source on GitHub</a>
+    </div>
+  </footer>
 </body>
 </html>

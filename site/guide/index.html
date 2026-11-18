@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Learn to share TCP and UDP services, send files, manage invite access, and troubleshoot direct connections with Unbind Desktop or the CLI.">
+  <title>Unbind Guide · Share, connect, and troubleshoot</title>
+  <link rel="canonical" href="https://unbind.dev/guide/">
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/guide/guide.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="site-header shell">
+    <a class="brand" href="/" aria-label="Unbind home"><img src="/icon.svg" width="32" height="32" alt="">unbind</a>
+    <nav aria-label="Main navigation">
+      <a href="/#features">Features</a>
+      <a href="/#how-it-works">How it works</a>
+      <a href="/guide/" aria-current="page">Guide</a>
+      <a class="nav-download" href="/downloads/">Downloads</a>
+    </nav>
+  </header>
+  <main id="main" class="shell guide">
+    <header class="guide-intro">
+      <h1>Unbind guide<span>.</span></h1>
+      <p class="intro">Send your first invite, decide who can connect, and find out what to check when a direct connection fails.</p>
+      <div class="guide-actions">
+        <a class="primary-link" href="#quickstart">Make a first connection</a>
+        <a href="#troubleshooting">Troubleshoot a connection</a>
+      </div>
+    </header>
+
+    <div class="guide-layout">
+      <nav class="guide-contents" aria-labelledby="guide-contents-title">
+        <h2 id="guide-contents-title">On this page</h2>
+        <ul>
+          <li><a href="#install">Install Unbind</a></li>
+          <li><a href="#quickstart">Share and connect</a></li>
+          <li><a href="#services">TCP, UDP, and SSH</a></li>
+          <li><a href="#invites">Invite access</a></li>
+          <li><a href="#files">File transfers</a></li>
+          <li><a href="#sessions">Sessions and profiles</a></li>
+          <li><a href="#network">Connection setup</a></li>
+          <li><a href="#lan">Offline LAN mode</a></li>
+          <li><a href="#troubleshooting">Troubleshooting</a></li>
+          <li><a href="#verification">Verify and update</a></li>
+        </ul>
+      </nav>
+
+      <div class="guide-body">
+        <section id="install" aria-labelledby="install-heading">
+          <h2 id="install-heading">Install Unbind</h2>
+          <p>Install Unbind on both computers. Either can use the desktop app or the CLI. An invite works with both.</p>
+          <h3>Desktop app</h3>
+          <p>Choose the archive for your operating system and processor from <a href="/downloads/#desktop-title">desktop downloads</a>. Extract it before opening the app.</p>
+          <ul class="guide-platforms">
+            <li><strong>macOS 13 or later.</strong> Move <code>Unbind.app</code> to Applications and open it. The app uses an ad-hoc signature, so macOS may ask you to approve it in Privacy &amp; Security.</li>
+            <li><strong>Windows.</strong> Open <code>Unbind.exe</code>. It runs under your user account. Windows may display a publisher prompt on first launch.</li>
+            <li><strong>Linux.</strong> Open <code>Unbind/unbind-desktop</code>. The build targets Ubuntu 24.04 or a compatible glibc distribution and needs X11 or Wayland and Vulkan graphics. The archive includes an optional per-user installer. You can enter file paths by hand on systems without an XDG file picker.</li>
+          </ul>
+          <h3>CLI</h3>
+          <p>On macOS and Linux, the installer places the binary in <code>~/.local/bin</code> by default. Add that directory to your <code>PATH</code> if your shell needs it.</p>
+          <div class="terminal"><pre><code data-install="sh">curl -fsSL https://unbind.dev/install.sh | sh</code></pre><button type="button" data-copy aria-label="Copy macOS and Linux install command" hidden>Copy</button></div>
+          <p>In Windows PowerShell, run this installer.</p>
+          <div class="terminal"><pre><code data-install="powershell">irm https://unbind.dev/install.ps1 | iex</code></pre><button type="button" data-copy aria-label="Copy Windows install command" hidden>Copy</button></div>
+          <p>The <a href="/downloads/">downloads page</a> also has standalone CLI binaries and instructions for Homebrew, Scoop, and the WinGet manifest.</p>
+        </section>
+
+        <section id="quickstart" aria-labelledby="quickstart-heading">
+          <h2 id="quickstart-heading">Share and connect</h2>
+          <p>This example shares a web service already running on port <code>3000</code>. The computer running it is the <strong>host</strong>. The other computer is the <strong>guest</strong>.</p>
+          <div class="guide-pair">
+            <div>
+              <h3>On the host</h3>
+              <p>Open <strong>Share</strong>, enter <code>3000</code> in <strong>Port or address</strong>, and select <strong>Create invite</strong>. Use <strong>Copy invite</strong> to send the link to your guest. Keep Unbind open while they use the service.</p>
+              <figure class="guide-screen">
+                <a href="/images/desktop-share.webp"><img src="/images/desktop-share.webp" width="1100" height="760" loading="lazy" decoding="async" alt="Unbind Share view with the local service port and invite access settings."></a>
+              </figure>
+            </div>
+            <div>
+              <h3>On the guest</h3>
+              <p>Open <strong>Connect</strong>, paste the invite, and enter <code>8080</code> in <strong>Listen on</strong>. Select <strong>Connect</strong>. Once the session is connected, open <code>http://127.0.0.1:8080</code> in a browser on the guest computer.</p>
+              <figure class="guide-screen">
+                <a href="/images/desktop-connect.webp"><img src="/images/desktop-connect.webp" width="1100" height="760" loading="lazy" decoding="async" alt="Unbind Connect view with an invite input and the local listening port."></a>
+              </figure>
+            </div>
+          </div>
+          <h3>Use a terminal on either computer</h3>
+          <p>On the host, run the share command and copy the link it prints.</p>
+          <div class="terminal"><pre><code>unbind share 3000</code></pre><button type="button" data-copy aria-label="Copy share command" hidden>Copy</button></div>
+          <p>On the guest, replace <code>&lt;link&gt;</code> with the complete link and keep the quotes.</p>
+          <div class="terminal"><pre><code>unbind connect '&lt;link&gt;' --listen 8080</code></pre><button type="button" data-copy aria-label="Copy connect command" hidden>Copy</button></div>
+          <aside class="guide-note">
+            <p><strong>The guest uses its own local port.</strong> Open <code>127.0.0.1:8080</code> on the guest. If that port is in use, pick another and point your browser or service client there.</p>
+          </aside>
+        </section>
+
+        <section id="services" aria-labelledby="services-heading">
+          <h2 id="services-heading">TCP, UDP, and SSH</h2>
+          <p>A bare service port refers to <code>127.0.0.1</code> on the host. You can also enter a host address such as <code>192.168.1.20:5432</code> for a service reachable by that computer. On the guest, a bare listening port binds to <code>127.0.0.1</code>.</p>
+          <h3>Share several services in one invite</h3>
+          <p>Give each route a name with letters, numbers, hyphens, or underscores. The guest uses the same name and protocol and chooses a free local port.</p>
+          <table class="guide-routes">
+            <caption>Example port mapping</caption>
+            <thead><tr><th scope="col">Route</th><th scope="col">Protocol</th><th scope="col">Host target</th><th scope="col">Guest port</th></tr></thead>
+            <tbody>
+              <tr><th scope="row"><code>web</code></th><td>TCP</td><td><code>3000</code></td><td><code>8000</code></td></tr>
+              <tr><th scope="row"><code>api</code></th><td>TCP</td><td><code>8081</code></td><td><code>8001</code></td></tr>
+              <tr><th scope="row"><code>dns</code></th><td>UDP</td><td><code>5353</code></td><td><code>8053</code></td></tr>
+            </tbody>
+          </table>
+          <p>On the host, open <strong>Share → Advanced sharing</strong>. Clear <strong>Port or address</strong> for a named-only share. Enter <code>web=3000</code> and <code>api=8081</code> on separate lines under <strong>Named TCP services</strong>, and enter <code>dns=5353</code> under <strong>Named UDP services</strong>.</p>
+          <p>On the guest, open <strong>Connect → Named routes</strong>. For this named-only example, clear <strong>Listen on</strong>. Enter <code>web=8000</code> and <code>api=8001</code> under <strong>Named TCP ports</strong>, and enter <code>dns=8053</code> under <strong>Named UDP ports</strong>.</p>
+          <p>For the same share in the CLI, run this on the host.</p>
+          <div class="terminal"><pre><code>unbind share --tcp web=3000 --tcp api=8081 --udp dns=5353</code></pre><button type="button" data-copy aria-label="Copy named share command" hidden>Copy</button></div>
+          <p>On the guest, assign local ports to those names.</p>
+          <div class="terminal"><pre><code>unbind connect '&lt;link&gt;' --tcp web=8000 --tcp api=8001 --udp dns=8053</code></pre><button type="button" data-copy aria-label="Copy named connect command" hidden>Copy</button></div>
+          <h3>Use your usual service client</h3>
+          <ul>
+            <li><strong>Web app or API.</strong> Open the TCP listener address in a browser or follow the app’s normal HTTP or HTTPS setup.</li>
+            <li><strong>Database.</strong> If you share TCP port <code>5432</code> and the guest listens on <code>15432</code>, the guest points its database client at <code>127.0.0.1:15432</code> and signs in as usual.</li>
+            <li><strong>SSH.</strong> Share the host’s SSH port, typically <code>22</code>. If the guest chooses <code>2222</code>, the SSH client connects to <code>127.0.0.1</code> on port <code>2222</code> with the host’s usual SSH credentials.</li>
+          </ul>
+          <p>For CLI integration, OpenSSH can use Unbind as a <code>ProxyCommand</code>. This example uses a simple share created with <code>unbind share 22</code>.</p>
+          <div class="terminal"><pre><code>ssh -o "ProxyCommand=unbind connect '&lt;link&gt;' --stdio" user@host</code></pre><button type="button" data-copy aria-label="Copy SSH ProxyCommand example" hidden>Copy</button></div>
+        </section>
+
+        <section id="invites" aria-labelledby="invites-heading">
+          <h2 id="invites-heading">Manage invite access</h2>
+          <p>The complete invite grants access according to the share’s settings. Send it privately. A QR code carries the same invite, so share it with the same care.</p>
+          <h3>Send a link or display a QR code</h3>
+          <p>Use <strong>Copy invite</strong> or <strong>Show QR code</strong> after creating an invite on desktop. In the CLI, pass <code>--qr</code> to <code>unbind share</code>, <code>unbind send</code>, or <code>unbind invite</code>. The recipient still opens the invite in Unbind on their computer.</p>
+          <p>To open invites from a browser in the desktop app, choose <strong>Settings → Enable desktop links</strong>. From the invite’s join page, select <strong>Open in Unbind</strong>, review the invite in the app, and connect. If you use the CLI as your link handler, run <code>unbind register-link</code> and confirm each invite in the terminal.</p>
+          <h3>Limit an invite’s lifetime and audience</h3>
+          <p>In <strong>Share</strong>, set <strong>Expires after (minutes)</strong> to close the invite and its connections after a set time. Turn on <strong>One guest only</strong> to let the first successful guest use that link. If a used single-guest invite can no longer reconnect, ask the host for a fresh one.</p>
+          <p>With the CLI, set the lifetime in seconds. This invite lasts ten minutes and admits one successful guest.</p>
+          <div class="terminal"><pre><code>unbind share 3000 --expires-in 600 --single-use</code></pre><button type="button" data-copy aria-label="Copy expiring invite command" hidden>Copy</button></div>
+          <h3>Approve guests and remember a verified device</h3>
+          <p>Set <strong>Approve each guest</strong> before creating a share. In <strong>Sessions</strong>, choose <strong>Approve</strong> or <strong>Decline</strong> when a guest requests access. Guests can turn on <strong>Identify this device to the host</strong> before connecting. For a device you recognize, <strong>Approve and remember</strong> lets its verified identity skip future approvals on your computer.</p>
+          <p>For a CLI share, add <code>--approve</code>. On the guest, add <code>--identify</code> to <code>unbind connect</code> to present its Ed25519 device identity. A guest using the CLI can run <code>unbind identity</code> and share the public fingerprint with the host for comparison. Find the pending peer and share IDs with <code>unbind status</code> before approving or declining.</p>
+          <div class="terminal"><pre><code>unbind approve SHARE_ID PEER_ID --remember</code></pre><button type="button" data-copy aria-label="Copy remember-device command" hidden>Copy</button></div>
+          <p>Omit <code>--remember</code> for one approval, or run <code>unbind deny SHARE_ID PEER_ID</code> to decline.</p>
+          <h3>Issue and revoke separate guest links</h3>
+          <p>Use <strong>New invite</strong> on a share in <strong>Sessions</strong> to give another guest a separate URL. It takes its lifetime and one-guest setting from the current <strong>Share</strong> form. Use <strong>Revoke</strong> on that invite to close its link and disconnect its guests. <strong>Stop</strong> ends the entire share.</p>
+          <div class="terminal"><pre><code>unbind invite SHARE_ID --expires-in 600 --single-use
+unbind revoke SHARE_ID INVITE_ID</code></pre><button type="button" data-copy aria-label="Copy issue and revoke commands" hidden>Copy</button></div>
+        </section>
+
+        <section id="files" aria-labelledby="files-heading">
+          <h2 id="files-heading">Send and receive files</h2>
+          <p>Offer one file to one recipient. The file goes over the encrypted connection between peers. Unbind verifies its SHA-256 before saving it to the destination.</p>
+          <ol>
+            <li>On the sending computer, open <strong>Files</strong> and use <strong>Choose file</strong> or enter its path. Select <strong>Create file invite</strong>, then send the link.</li>
+            <li>On the receiving computer, paste the link in <strong>File invite link</strong>. Choose a new destination under <strong>Save as</strong> and select <strong>Receive file</strong>.</li>
+            <li>Keep both clients running until the transfer finishes. Choose a new filename if the destination already exists.</li>
+          </ol>
+          <p>If you opened the link with <strong>Open in Unbind</strong>, go to <strong>Files</strong> to receive it. The app fills in the file invite link.</p>
+          <p>On the sending computer with the CLI, run this command.</p>
+          <div class="terminal"><pre><code>unbind send ./report.pdf</code></pre><button type="button" data-copy aria-label="Copy file send command" hidden>Copy</button></div>
+          <p>On the receiving computer, provide the invite and the new destination.</p>
+          <div class="terminal"><pre><code>unbind receive '&lt;link&gt;' ./report.pdf</code></pre><button type="button" data-copy aria-label="Copy file receive command" hidden>Copy</button></div>
+        </section>
+
+        <section id="sessions" aria-labelledby="sessions-heading">
+          <h2 id="sessions-heading">Sessions and saved profiles</h2>
+          <p>Open <strong>Sessions</strong> to see active shares and connections, pending approvals, selected network paths, and traffic totals. The CLI can report the same local session status in a format suitable for scripts.</p>
+          <div class="terminal"><pre><code>unbind status --json</code></pre><button type="button" data-copy aria-label="Copy JSON status command" hidden>Copy</button></div>
+          <h3>Reconnect on the same local address</h3>
+          <p>With <strong>Reconnect after an interruption</strong> enabled, the guest keeps the local listener while Unbind tries to restore the tunnel. Existing TCP connections may close during the interruption. Reopen your service client’s connection once the session is back. CLI connections retry after interruption by default. Use <code>--no-reconnect</code> to exit instead.</p>
+          <h3>Reuse a share configuration</h3>
+          <p>Use <strong>Saved profiles</strong> in the desktop <strong>Share</strong> view to save a configuration. Give it a name and select <strong>Save profile</strong>. Later, choose <strong>Load</strong> and create an invite with those settings.</p>
+          <p>For the CLI, save a profile in <code>unbind.toml</code>. This example shares two TCP services under the same invite and sets a one-hour lifetime.</p>
+          <div class="terminal"><pre><code>[shares.dev]
+expires_in = 3600
+
+[shares.dev.tcp]
+web = "3000"
+api = "8081"</code></pre><button type="button" data-copy aria-label="Copy TOML profile example" hidden>Copy</button></div>
+          <p>Run one of the following on the host. Use <code>--config PATH</code> to choose a different profile file.</p>
+          <dl class="guide-commands">
+            <div><dt><code>unbind share dev</code></dt><dd>Start in the foreground.</dd></div>
+            <div><dt><code>unbind start dev</code></dt><dd>Start a background share.</dd></div>
+            <div><dt><code>unbind start dev --at-login</code></dt><dd>Start the background share and register it to start at user login on supported systems.</dd></div>
+            <div><dt><code>unbind stop dev --at-login</code></dt><dd>Stop the background share and remove its login registration.</dd></div>
+          </dl>
+        </section>
+
+        <section id="network" aria-labelledby="network-heading">
+          <h2 id="network-heading">How a direct connection is made</h2>
+          <ol class="guide-process">
+            <li><strong>Meet through rendezvous.</strong> The host and guest exchange short-lived connection descriptions. The invitation’s authentication secret lives in the part of the link after <code>#</code>. The clients use it to authenticate the offer and answer.</li>
+            <li><strong>Find a direct UDP path.</strong> STUN helps each peer learn the public UDP address its network presents. ICE checks candidates such as local and public addresses to find a working path between the computers.</li>
+            <li><strong>Exchange traffic peer to peer.</strong> Application traffic and files travel through the encrypted WebRTC data channel between the peers. The rendezvous service handles setup. An established tunnel can keep running during a rendezvous outage.</li>
+          </ol>
+          <h3>Run diagnostics on both networks</h3>
+          <p>In the desktop app, choose <strong>Settings → Run diagnostics</strong>. In the CLI, run <code>unbind doctor</code>. The checks report rendezvous reachability and STUN results over IPv4 and IPv6. A successful diagnostic shows those parts are reachable. A live attempt across the two networks tests the direct path.</p>
+          <div class="terminal"><pre><code>unbind doctor --json</code></pre><button type="button" data-copy aria-label="Copy JSON diagnostics command" hidden>Copy</button></div>
+          <h3>Double NAT and restricted networks</h3>
+          <p>Unbind needs a direct UDP path. Double NAT, carrier-grade NAT, and restrictive firewalls can prevent ICE from finding one. When direct checks fail, Unbind reports a connection failure. If both peers are on the same local network, try <a href="#lan">LAN mode</a>.</p>
+          <h3>Configure a reachable UDP endpoint</h3>
+          <p>Keep the optional network fields blank for automatic discovery. If you control the router and already forward an external UDP port, set <strong>Local UDP bind</strong> and <strong>Public UDP endpoint</strong> in <strong>Settings</strong>. Forward the external UDP port to that local bind address and port. The public address and bind must use the same IP family.</p>
+          <p>This CLI example advertises a public address on UDP <code>45000</code> that the router forwards to local UDP <code>40000</code>. Replace <code>PUBLIC_IP</code> with your reachable address.</p>
+          <div class="terminal"><pre><code>unbind share 3000 --udp-bind 0.0.0.0:40000 --public-endpoint PUBLIC_IP:45000</code></pre><button type="button" data-copy aria-label="Copy manual UDP endpoint example" hidden>Copy</button></div>
+          <p>For a router that supports PCP, set <strong>PCP gateway</strong> to the router’s local IP and use a <strong>Local UDP bind</strong>. Unbind requests a temporary mapping and renews it while in use. Choose either a public endpoint or a PCP gateway for a given connection.</p>
+          <div class="terminal"><pre><code>unbind share 3000 --udp-bind 0.0.0.0:40000 --map-port 192.168.1.1</code></pre><button type="button" data-copy aria-label="Copy PCP port mapping example" hidden>Copy</button></div>
+          <h3>Use another rendezvous or STUN service</h3>
+          <p>In desktop <strong>Settings</strong>, set the <strong>Rendezvous server</strong> to an HTTPS origin and <strong>STUN servers</strong> to a comma-separated list of <code>stun:</code> URLs or <code>none</code>. Select <strong>Save settings</strong>. The guest uses the rendezvous origin in the invite. For CLI hosts, use <code>--server</code> or <code>UNBIND_SERVER</code> and set <code>--stun</code> or <code>UNBIND_STUN</code>.</p>
+          <p>The source repository includes the <code>unbind-web</code> rendezvous server and a Dockerfile. It keeps short-lived room state in memory. Run a single instance and serve it over HTTPS for peers outside your local network. <a href="https://github.com/nearbycoder/unbind.dev#build-and-run-locally">Build and operate rendezvous from source</a>.</p>
+        </section>
+
+        <section id="lan" aria-labelledby="lan-heading">
+          <h2 id="lan-heading">Share offline on a LAN</h2>
+          <p>Use LAN mode when both computers can reach each other on the same private network. The host runs rendezvous locally and the link points to its private address. Both clients use local candidates and can connect without internet service.</p>
+          <p>On desktop, choose <strong>Share → Advanced sharing → Local network only</strong> before creating the invite. The guest connects using that invite as usual.</p>
+          <div class="terminal"><pre><code>unbind share 3000 --lan</code></pre><button type="button" data-copy aria-label="Copy LAN share command" hidden>Copy</button></div>
+          <p>If the host has several interfaces, the CLI can select a specific local address with <code>--lan-bind IP:PORT</code>. Choose an address the guest can reach. Guest Wi-Fi isolation or a local firewall can still prevent the peers from reaching each other.</p>
+        </section>
+
+        <section id="troubleshooting" aria-labelledby="troubleshooting-heading">
+          <h2 id="troubleshooting-heading">Troubleshoot a connection</h2>
+          <div class="guide-faq">
+            <details open>
+              <summary>The invite looks invalid or stays on Connecting</summary>
+              <p>Copy the full invite, including the part after <code>#</code>. Confirm the host is still running the share and review <strong>Sessions</strong> for pending approval. If an invite has expired, been revoked, or been used by its first guest, ask the host to issue a new one.</p>
+            </details>
+            <details>
+              <summary>Unbind connects, but the service won’t open</summary>
+              <p>Check that the host can open the original service locally. On the guest, use the listening port shown in <strong>Sessions</strong>. For a named share, check that the route has the same name and protocol on both peers. Use the service’s usual client, protocol, and credentials.</p>
+            </details>
+            <details>
+              <summary>The tunnel works at home, then fails across networks</summary>
+              <p>Run diagnostics on both networks and retry across those same networks. If direct UDP remains unavailable, try a network that can reach the other peer directly. A reachable UDP port mapping can help when you control the router. Double NAT can require reachability through more than one router.</p>
+            </details>
+            <details>
+              <summary>The guest cannot bind its local port</summary>
+              <p>Change <strong>Listen on</strong> or the relevant named port to a free local port. Connect again, then update your browser or service client to that port.</p>
+            </details>
+            <details>
+              <summary>The browser’s Open in Unbind button does nothing</summary>
+              <p>In the desktop app, use <strong>Settings → Enable desktop links</strong>. You can also use <strong>Copy invite</strong> on the join page and paste the full link into <strong>Connect</strong> manually.</p>
+            </details>
+            <details>
+              <summary>A file transfer fails before saving</summary>
+              <p>Confirm the sender still has the file invite open. Choose a destination that does not already exist and make sure its directory is writable. If the file invite was consumed during the failed attempt, ask the sender for a new one.</p>
+            </details>
+          </div>
+        </section>
+
+        <section id="verification" aria-labelledby="verification-heading">
+          <h2 id="verification-heading">Verify and update</h2>
+          <h3>Desktop archives</h3>
+          <p>Get the archive and its matching <code>unbind-desktop-SHA256SUMS</code> and <code>unbind-desktop-SHA256SUMS.sig</code> files from the same version in the <a href="/downloads/releases/">release archive</a>. In that folder, save a trusted copy of Unbind’s <a href="https://github.com/nearbycoder/unbind.dev/blob/main/release/public-key.hex">pinned Ed25519 public key</a> as <code>public-key.hex</code>.</p>
+          <p>In a POSIX shell with OpenSSL 3 and <code>xxd</code>, convert the key to DER and verify the checksum file’s signature.</p>
+          <div class="terminal"><pre><code>{ printf '%s' 302a300506032b6570032100; cat public-key.hex; } | xxd -r -p &gt; unbind-public.der
+openssl pkeyutl -verify -pubin -keyform DER -inkey unbind-public.der -rawin \
+  -in unbind-desktop-SHA256SUMS -sigfile unbind-desktop-SHA256SUMS.sig</code></pre><button type="button" data-copy aria-label="Copy desktop signature verification commands" hidden>Copy</button></div>
+          <p>Compare the SHA-256 of your archive with the corresponding line in the verified checksum file. Run <code>sha256sum ARCHIVE</code> on Linux, <code>shasum -a 256 ARCHIVE</code> on macOS, or <code>Get-FileHash -Algorithm SHA256 -Path ARCHIVE</code> in Windows PowerShell. Replace <code>ARCHIVE</code> with your downloaded filename.</p>
+          <p>To update the desktop app, quit Unbind, extract the archive for the new version, and replace the previous app.</p>
+          <h3>CLI installation and updates</h3>
+          <p>The CLI installers verify the published SHA-256 before installation. The <a href="/downloads/#verify-title">verification commands</a> compare the installed executable with the currently published binary. If you installed to a custom <code>UNBIND_BIN_DIR</code>, use that same directory when verifying.</p>
+          <p>Use these commands with a standalone CLI installation. For installations managed by a package manager, update through the matching package manager.</p>
+          <dl class="guide-commands">
+            <div><dt><code>unbind update --check</code></dt><dd>Check for a published signed version.</dd></div>
+            <div><dt><code>unbind update</code></dt><dd>Verify and install the latest signed version.</dd></div>
+            <div><dt><code>unbind update --version 0.3.0</code></dt><dd>Select an exact published version.</dd></div>
+            <div><dt><code>unbind rollback</code></dt><dd>Restore the executable saved before the last update.</dd></div>
+          </dl>
+        </section>
+      </div>
+    </div>
+  </main>
+  <footer class="site-footer shell">
+    <p>Inspired by <a href="https://github.com/tailscale/tailcat">Tailcat by Tailscale</a>.</p>
+    <div class="footer-links">
+      <a href="https://github.com/nearbycoder/unbind.dev">Source on GitHub</a>
+      <a href="/downloads/releases/">Releases</a>
+      <a href="/downloads/">Downloads</a>
+    </div>
+  </footer>
+</body>
+</html>
